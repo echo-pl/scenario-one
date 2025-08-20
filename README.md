@@ -5,9 +5,10 @@ intelligence network for supervised exercises. It is youth-safe and does not
 connect to real systems.
 
 ## Usage
-Open `index.html` locally or visit the GitHub Pages deployment. Select a
-scenario to launch the terminal. Use keyboard commands to explore nodes and
-recover codes.
+Open `index.html` locally or visit the GitHub Pages deployment to launch the
+training terminal. It loads `scenarios/example-basic.json` by default. Pass a
+different file with `?scenario=filename.json` to load custom scenarios. Use
+keyboard commands to explore nodes and recover codes.
 
 ## Development
 This project is pure client-side. To test locally run a simple web server:
