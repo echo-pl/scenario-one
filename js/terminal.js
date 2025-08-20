@@ -274,8 +274,16 @@
       num = String(num || '');
       if(!/^\d{4}$/.test(num)){ write('Submit requires a 4‑digit number.', 'warn'); return; }
       var hit = false;
-      if(num===GAME.codes.alpha){ if(!GAME.found.alpha){ write('Alpha code accepted.', 'success'); } GAME.found.alpha = true; hit=true; }
-      if(num===GAME.codes.bravo){ if(!GAME.found.bravo){ write('Bravo code accepted.', 'success'); } GAME.found.bravo = true; hit=true; }
+      if(num===GAME.codes.alpha){
+        if(!GAME.found.alpha){ write('Alpha code accepted.', 'success'); }
+        GAME.found.alpha = true;
+        hit = true;
+      }
+      if(num===GAME.codes.bravo){
+        if(!GAME.found.bravo){ write('Bravo code accepted.', 'success'); }
+        GAME.found.bravo = true;
+        hit = true;
+      }
       if(!hit){ write('Code rejected.', 'err'); }
       updatePanel(); victoryCheck();
     },
