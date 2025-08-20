@@ -1,248 +1,320 @@
-(async () => {
-  const params = new URLSearchParams(location.search);
-  const scenarioFile = params.get('scenario') || 'example-basic.json';
-  let data;
-  try {
-    data = await fetch(`scenarios/${scenarioFile}`).then(r => r.json());
-  } catch (e) {
-    document.body.innerHTML = '<p>Failed to load scenario.</p>';
-    throw e;
+/* Echo Platoon INTELNET – CodePen build (AU English)
+   Adds: IP-driven connect flow, staged handshake, intrusion timer & auto-disconnect.
+*/
+(function(){
+  // —— Tunables —— //
+  var CONNECT_DELAY_MS = 2200;      // time to "establish" a connection
+  var INTRUSION_LIMIT_MS = 90000;   // session lifespan before forced disconnect (90s)
+  var INTRUSION_TICK_MS = 1000;     // countdown update interval
+
+  // Map field IPs to nodes (print these on your physical intel props)
+  var IP_TO_NODE = {
+    "10.2.3.112": "alpha",
+    "10.4.1.77":  "bravo"
+  };
+
+  // —— Scenario data —— //
+  var GAME = {
+    codes: { alpha: "1847", bravo: "9302" },
+    found: { alpha: false, bravo: false },
+    currentHost: null,
+    connected: false,
+    sessionEndsAt: null,
+    nodes: {
+      alpha: {
+        name: "raven-relay (alpha)",
+        banner: "Connected to ALPHA relay. Authorised users only.",
+        files: {
+          "ops/encoded.msg": "Q09ERTogMTg0Nw==", // "CODE: 1847"
+          "ops/readme.txt": "Ops note: bandwidth caps remain in effect.\nReminder: never store codes in plain text.",
+          "docs/notice.txt": "If intercepted: all sensitive strings MUST be base64 before transit."
+        }
+      },
+      bravo: {
+        name: "raven-store (bravo)",
+        banner: "Connected to BRAVO storage node. Minimal services exposed.",
+        files: {
+          "intel/msg.enc": "FRPERG PVCURE: EBG13\nCODES: ABG VA CYNPR.\nCNFFJBEQ: \"ENIRA\".\nQRFP: 'Pbqr vf va gur frpbaq yvar'.",
+          "intel/manifest.txt": "Archive rotation weekly. Cipher hint embedded in message.",
+          "tmp/raven.dat": "Svefg ahzore: abg urer."
+        }
+      }
+    }
+  };
+
+  // —— DOM —— //
+  var screen = document.getElementById('screen');
+  var input  = document.getElementById('cmd');
+  var hostEl = document.getElementById('host');
+  var alphaState = document.getElementById('alphaState');
+  var bravoState = document.getElementById('bravoState');
+  var progressEl = document.getElementById('progress');
+  var brief = document.getElementById('brief');
+
+  // —— Helpers —— //
+  function write(txt, cls){
+    var row = document.createElement('div');
+    row.className = 'row ' + (cls || 'out');
+    row.textContent = txt;
+    screen.appendChild(row);
+    screen.scrollTop = screen.scrollHeight;
+  }
+  function hr(){ write('────────────────────────────────────────────────', 'muted'); }
+  function setHost(){ hostEl.textContent = '/' + (GAME.currentHost || ''); }
+  function updatePanel(){
+    alphaState.textContent = GAME.found.alpha ? ('Code ' + GAME.codes.alpha + ' found') : (GAME.currentHost==='alpha'?'Connected':'Unknown');
+    bravoState.textContent = GAME.found.bravo ? ('Code ' + GAME.codes.bravo + ' found') : (GAME.currentHost==='bravo'?'Connected':'Unknown');
+    var total = (GAME.found.alpha?1:0) + (GAME.found.bravo?1:0);
+    var timeLeft = timeRemaining();
+    var t = total + ' / 2 codes';
+    if(GAME.connected && timeLeft > 0){
+      t += ' · session ' + fmtTime(timeLeft) + ' remaining';
+    }
+    progressEl.textContent = t;
+  }
+  function victoryCheck(){
+    if(GAME.found.alpha && GAME.found.bravo){
+      hr();
+      write('MISSION COMPLETE ✅', 'success');
+      write('Take these to the lock box:  ' + GAME.codes.alpha + '  +  ' + GAME.codes.bravo, 'success');
+      hr();
+    }
+  }
+  function fileLookup(path){
+    if(!GAME.connected || !GAME.currentHost) return null;
+    var files = GAME.nodes[GAME.currentHost].files || {};
+    return files.hasOwnProperty(path) ? files[path] : null;
+  }
+  function listFiles(){
+    if(!GAME.connected){ write('Not connected. Use: connect <ip|alpha|bravo>', 'warn'); return; }
+    var files = GAME.nodes[GAME.currentHost].files;
+    var keys = Object.keys(files);
+    if(!keys.length){ write('(no files)'); return; }
+    var tree = {};
+    keys.forEach(function(p){
+      var m = p.split(/\/(.+)/);
+      var dir = m[0], file = m[1] || '';
+      if(!tree[dir]) tree[dir] = [];
+      tree[dir].push(file);
+    });
+    Object.keys(tree).forEach(function(dir){
+      write(dir + '/', 'muted');
+      tree[dir].forEach(function(f){ write('  ' + f); });
+    });
+  }
+  function rot13(s){
+    return s.replace(/[a-zA-Z]/g, function(c){
+      var base = (c <= 'Z') ? 65 : 97;
+      return String.fromCharCode((c.charCodeAt(0)-base+13)%26+base);
+    });
+  }
+  function decodeBase64(s){
+    try{ return atob(String(s).replace(/\s+/g,'')); }
+    catch(e){ return null; }
+  }
+  function fmtTime(ms){
+    var sec = Math.max(0, Math.floor(ms/1000));
+    var m = Math.floor(sec/60), s = sec%60;
+    return (m<10?'0':'')+m+':' + (s<10?'0':'')+s;
+  }
+  function timeRemaining(){
+    return (GAME.connected && GAME.sessionEndsAt) ? (GAME.sessionEndsAt - Date.now()) : 0;
   }
 
-  document.title = data.title || 'Echo Platoon Intelligence Network';
-  const totalCodes = Object.keys(data.codes || {}).length;
-  const GAME = {
-    codes: data.codes,
-    found: Object.fromEntries(Object.keys(data.codes || {}).map(k => [k, false])),
-    currentHost: null,
-    nodes: data.nodes || {},
-    hints: data.hints || {}
-  };
+  // —— Session management —— //
+  var timerId = null;
+  function startTimer(){
+    stopTimer();
+    timerId = setInterval(function(){
+      var left = timeRemaining();
+      if(left <= 0){
+        stopTimer();
+        forcedDisconnect('Intrusion detected. Link dropped.');
+      } else {
+        updatePanel();
+      }
+    }, INTRUSION_TICK_MS);
+  }
+  function stopTimer(){
+    if(timerId){ clearInterval(timerId); timerId = null; }
+  }
+  function forcedDisconnect(reason){
+    GAME.connected = false;
+    write(reason || 'Disconnected.', 'err');
+    GAME.currentHost = null;
+    setHost(); updatePanel();
+  }
+  function disconnectUser(){
+    if(!GAME.connected){ write('No active session.', 'warn'); return; }
+    stopTimer();
+    GAME.connected = false;
+    write('Session terminated by user.', 'warn');
+    GAME.currentHost = null;
+    setHost(); updatePanel();
+  }
+  function stagedConnect(targetNode){
+    // Visual “probing → handshake → elevating → connected”
+    write('Probing…', 'muted');
+    setTimeout(function(){
+      write('Handshake…', 'muted');
+      setTimeout(function(){
+        write('Elevating…', 'muted');
+        setTimeout(function(){
+          GAME.connected = true;
+          GAME.currentHost = targetNode;
+          GAME.sessionEndsAt = Date.now() + INTRUSION_LIMIT_MS;
+          setHost(); updatePanel(); startTimer();
+          write('→ ' + GAME.nodes[targetNode].banner, 'muted');
+          // Subtle note in the brief after first connect
+          if(brief && !brief.dataset.hint){
+            brief.dataset.hint = '1';
+            brief.textContent = 'Maintain a low profile. Extract what you need before the session expires.';
+          }
+        }, 400);
+      }, 700);
+    }, 700);
+  }
 
-  // DOM helpers
-  const screen = document.getElementById('screen');
-  const input = document.getElementById('cmd');
-  const mapbox = document.getElementById('mapbox');
-  const mapfile = document.getElementById('mapfile');
-  document.getElementById('objective').textContent = data.objective || '';
-  document.getElementById('progress').textContent = `0 / ${totalCodes} codes`;
-
-  const S = {
-    write(txt, cls = 'out') {
-      const row = document.createElement('div');
-      row.className = 'row ' + cls;
-      row.textContent = txt;
-      screen.appendChild(row);
-      screen.scrollTop = screen.scrollHeight;
+  // —— Commands —— //
+  var handlers = {
+    help: function(){
+      write('Available commands:', 'muted');
+      write('  help                    Show this help');
+      write('  scan                    Passive sweep (may not reveal hidden hosts)');
+      write('  connect <ip|alpha|bravo>  Attempt link to target');
+      write('  disconnect              Terminate current session');
+      write('  ls                      List files on current node');
+      write('  cat <path>              Print a file');
+      write('  decode base64 <x>       Decode Base64 of <file|text>');
+      write('  decode rot13  <x>       Decode ROT13 of <file|text>');
+      write('  status                  Show progress and session time');
+      write('  submit 1234             Submit a discovered code');
+      write('  clear                   Clear the screen');
+      write('  reset                   Reset the exercise');
     },
-    prompt() {
-      const row = document.createElement('div');
-      row.className = 'row';
-      row.innerHTML = `<span class="prompt">echo@ops</span><span class="host">/${GAME.currentHost || ''}</span><span> $</span>`;
-      screen.appendChild(row);
-      screen.scrollTop = screen.scrollHeight;
-    },
-    hr() { S.write('────────────────────────────────────────────────', 'muted'); }
-  };
-
-  // Utilities
-  const rot13 = s => s.replace(/[a-zA-Z]/g, c => {
-    const base = c <= 'Z' ? 65 : 97;
-    return String.fromCharCode((c.charCodeAt(0) - base + 13) % 26 + base);
-  });
-
-  const decodeBase64 = s => {
-    try {
-      return atob(s.replace(/\s+/g, ''));
-    } catch (e) { return null; }
-  };
-
-  const fileLookup = path => {
-    if (!GAME.currentHost) return null;
-    const files = GAME.nodes[GAME.currentHost].files;
-    return files[path] ?? null;
-  };
-
-  const listFiles = () => {
-    if (!GAME.currentHost) { S.write('Not connected. Use: connect alpha|bravo', 'warn'); return; }
-    const entries = Object.keys(GAME.nodes[GAME.currentHost].files);
-    if (!entries.length) { S.write('(no files)'); return; }
-    const tree = {};
-    entries.forEach(p => {
-      const [dir, file] = p.split(/\/(.+)/);
-      (tree[dir] ??= new Set()).add(file);
-    });
-    Object.entries(tree).forEach(([dir, set]) => {
-      S.write(dir + '/', 'muted');
-      [...set].forEach(f => S.write('  ' + f));
-    });
-  };
-
-  const updatePanel = () => {
-    if ('alpha' in GAME.codes) {
-      document.getElementById('alphaState').textContent = GAME.found.alpha
-        ? `Code ${GAME.codes.alpha} found`
-        : (GAME.currentHost === 'alpha' ? 'Connected' : 'Unknown');
-    }
-    if ('bravo' in GAME.codes) {
-      document.getElementById('bravoState').textContent = GAME.found.bravo
-        ? `Code ${GAME.codes.bravo} found`
-        : (GAME.currentHost === 'bravo' ? 'Connected' : 'Unknown');
-    }
-    const total = Object.values(GAME.found).filter(Boolean).length;
-    document.getElementById('progress').textContent = `${total} / ${totalCodes} codes`;
-  };
-
-  const victoryCheck = () => {
-    if (Object.values(GAME.found).every(Boolean)) {
-      S.hr();
-      S.write('MISSION COMPLETE ✅', 'success');
-      const codesStr = Object.values(GAME.codes).join('  +  ');
-      S.write(`Take these to the lock box:  ${codesStr}`, 'success');
-      S.hr();
-    }
-  };
-
-  const handlers = {
-    help() {
-      S.write('Available commands:', 'muted');
-      S.write('  help                    Show this help');
-      S.write('  scan                    Recon for Raven nodes');
-      S.write('  connect alpha|bravo     Open a session');
-      S.write('  ls                      List files on current node');
-      S.write('  cat <path>              Print a file');
-      S.write('  decode base64 <x>       Decode Base64 of <file|text>');
-      S.write('  decode rot13  <x>       Decode ROT13 of <file|text>');
-      S.write('  status                  Show progress');
-      S.write('  submit 1234             Submit a discovered code');
-      S.write('  map                     Toggle map panel highlight');
-      S.write('  hint                    Contextual hint');
-      S.write('  clear                   Clear the screen');
-      S.write('  reset                   Reset the exercise');
-    },
-    clear() { screen.innerHTML = ''; },
-    scan() {
-      S.write('Running passive scan…', 'muted');
-      setTimeout(() => {
-        Object.entries(GAME.nodes).forEach(([id, node]) => {
-          S.write(`• Found host: ${id}  (${node.name})`);
-        });
-        S.write('Hint: try `connect alpha`', 'muted');
+    clear: function(){ screen.innerHTML = ''; },
+    scan: function(){
+      write('Running passive scan…', 'muted');
+      setTimeout(function(){
+        write('No broadcast beacons detected. Field reconnaissance may be required.', 'warn');
+        write('Tip: look for a target address in recovered notes.', 'muted');
       }, 300);
     },
-    connect(arg) {
-      if (!arg || !GAME.nodes[arg]) { S.write('Usage: connect alpha|bravo', 'warn'); return; }
-      GAME.currentHost = arg;
-      S.write('→ ' + GAME.nodes[arg].banner, 'host');
+    connect: function(arg){
+      if(!arg){ write('Usage: connect <ip|alpha|bravo>', 'warn'); return; }
+      if(GAME.connected){ write('A session is already active. Use `disconnect` first.', 'warn'); return; }
+
+      var node = null;
+      // Accept direct node names
+      if(GAME.nodes[arg]) node = arg;
+
+      // Accept IPs — only mapped IPs will work; others simulate failure
+      if(!node && /^\d{1,3}(\.\d{1,3}){3}$/.test(arg)){
+        node = IP_TO_NODE[arg] || null;
+        if(!node){
+          write('Attempting connection to ' + arg + ' …', 'muted');
+          setTimeout(function(){ write('No response, target filtered or offline.', 'err'); }, 1100);
+          return;
+        }
+      }
+
+      if(!node){
+        write('Unknown target. Use a valid field address or known host (alpha|bravo).', 'warn');
+        return;
+      }
+
+      write('Connecting to ' + (IP_TO_NODE[arg] ? arg + ' ('+node+')' : node) + ' …', 'muted');
+      setTimeout(function(){ stagedConnect(node); }, CONNECT_DELAY_MS);
+    },
+    disconnect: function(){ disconnectUser(); },
+    ls: function(){ listFiles(); },
+    cat: function(path){
+      if(!GAME.connected){ write('Not connected.', 'warn'); return; }
+      if(!path){ write('Usage: cat <path>', 'warn'); return; }
+      var val = fileLookup(path);
+      if(val == null){ write('No such file here.', 'err'); return; }
+      write('----- ' + path + ' -----', 'muted');
+      write(val);
+      write('----- end -----', 'muted');
+    },
+    decode: function(kind){
+      var rest = Array.prototype.slice.call(arguments,1).join(' ');
+      if(!kind || !rest){ write('Usage: decode base64|rot13 <file|text>', 'warn'); return; }
+      var source = fileLookup(rest);
+      if(source == null) source = rest;
+      var out = null, label = '';
+      if(kind.toLowerCase()==='base64'){ out = decodeBase64(source); label='Base64'; }
+      else if(kind.toLowerCase()==='rot13'){ out = rot13(source); label='ROT13'; }
+      else { write('Unknown decoder. Use base64 or rot13', 'warn'); return; }
+      if(out==null){ write(label + ' decode failed.', 'err'); return; }
+      write('[decoded ' + label + ']', 'muted');
+      write(out, 'success');
+
+      // Auto-detect "CODE: 1234" (or PBQR: 1234)
+      var m = out.match(/CODE:\s*(\d{4})/i) || out.match(/PBQR:\s*(\d{4})/i);
+      if(m){ handlers.submit(m[1]); }
+    },
+    status: function(){
       updatePanel();
-    },
-    ls() { listFiles(); },
-    cat(path) {
-      if (!path) { S.write('Usage: cat <path>', 'warn'); return; }
-      const val = fileLookup(path);
-      if (val == null) { S.write('No such file here.', 'err'); return; }
-      S.write('----- ' + path + ' -----', 'muted');
-      S.write(val);
-      S.write('----- end -----', 'muted');
-    },
-    decode(kind, rest) {
-      if (!kind || !rest) { S.write('Usage: decode base64|rot13 <file|text>', 'warn'); return; }
-      let source = fileLookup(rest);
-      if (source == null) source = rest;
-      let out = null, label = '';
-      if (kind.toLowerCase() === 'base64') {
-        out = decodeBase64(source);
-        label = 'Base64';
-      } else if (kind.toLowerCase() === 'rot13') {
-        out = rot13(source);
-        label = 'ROT13';
+      var a = (GAME.found.alpha?'complete':'pending');
+      var b = (GAME.found.bravo?'complete':'pending');
+      var left = timeRemaining();
+      if(GAME.connected){
+        write('Status: connected / ' + (GAME.currentHost || '?') + ' · time left ' + fmtTime(left));
       } else {
-        S.write('Unknown decoder. Use base64 or rot13', 'warn'); return;
+        write('Status: idle (no active session).');
       }
-      if (out == null) { S.write(label + ' decode failed.', 'err'); return; }
-      S.write(`[decoded ${label}]`);
-      S.write(out, 'success');
-      const m = out.match(/CODE:\s*(\d{4})/i) || out.match(/PBQR:\s*(\d{4})/i);
-      if (m) { handlers.submit(m[1]); }
+      write('Alpha: ' + a + ' | Bravo: ' + b);
     },
-    status() {
-      updatePanel();
-      const flags = Object.entries(GAME.found).map(([k, v]) => `${k}: ${v ? 'complete' : 'pending'}`);
-      S.write(flags.join(' | '));
-    },
-    submit(num) {
-      if (!/^\d{4}$/.test(String(num || ''))) { S.write('Submit requires a 4‑digit number.', 'warn'); return; }
-      const s = String(num);
-      let flagged = false;
-      for (const [key, val] of Object.entries(GAME.codes)) {
-        if (s === val) { GAME.found[key] = true; flagged = true; S.write(`${key.charAt(0).toUpperCase() + key.slice(1)} code accepted.`, 'success'); }
-      }
-      if (!flagged) { S.write('Code rejected.', 'err'); }
+    submit: function(num){
+      num = String(num || '');
+      if(!/^\d{4}$/.test(num)){ write('Submit requires a 4‑digit number.', 'warn'); return; }
+      var hit = false;
+      if(num===GAME.codes.alpha){ if(!GAME.found.alpha){ write('Alpha code accepted.', 'success'); } GAME.found.alpha = true; hit=true; }
+      if(num===GAME.codes.bravo){ if(!GAME.found.bravo){ write('Bravo code accepted.', 'success'); } GAME.found.bravo = true; hit=true; }
+      if(!hit){ write('Code rejected.', 'err'); }
       updatePanel(); victoryCheck();
     },
-    map() {
-      mapbox.style.outline = mapbox.style.outline ? '' : '2px solid var(--accent)';
-      if (mapbox.querySelector('img')) { S.write('Map visible in side panel.'); }
-      else { S.write('Upload an area map in the side panel (optional).'); }
-    },
-    hint() {
-      if (!GAME.currentHost) {
-        const h = GAME.hints.global?.[0] || 'Try `scan` then `connect alpha`.';
-        S.write(h, 'muted'); return;
-      }
-      if (!GAME.found[GAME.currentHost] && GAME.hints[GAME.currentHost]?.length) {
-        S.write(GAME.hints[GAME.currentHost][0], 'muted');
-      } else {
-        const h = GAME.hints.complete?.[0] || 'When you’ve found both codes, `status` then take them to the box.';
-        S.write(h, 'muted');
-      }
-    },
-    reset() {
-      GAME.found = Object.fromEntries(Object.keys(GAME.codes).map(k => [k, false]));
+    reset: function(){
+      stopTimer();
+      GAME.found.alpha = GAME.found.bravo = false;
       GAME.currentHost = null;
-      updatePanel();
-      S.write('Exercise state reset.', 'warn');
+      GAME.connected = false;
+      GAME.sessionEndsAt = null;
+      setHost(); updatePanel();
+      write('Exercise state reset.', 'warn');
     }
   };
 
-  const route = line => {
-    const parts = line.trim().split(/\s+/);
-    const cmd = (parts.shift() || '').toLowerCase();
-    if (!cmd) { return; }
-    if (handlers[cmd]) {
-      handlers[cmd](...parts);
-    } else {
-      S.write(`Unknown command: ${cmd} (try 'help')`, 'err');
-    }
-  };
+  // —— Input routing —— //
+  function route(line){
+    var parts = String(line).trim().split(/\s+/);
+    var cmd = (parts.shift() || '').toLowerCase();
+    if(!cmd) return;
+    if(handlers[cmd]){ handlers[cmd].apply(null, parts); }
+    else { write("Unknown command: " + cmd + " (try 'help')", 'err'); }
+  }
 
-  input.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      const val = input.value;
-      S.write(`$ ${val}`, 'muted');
+  // —— Wire up —— //
+  input.addEventListener('keydown', function(e){
+    if(e.key === 'Enter'){
+      var val = input.value;
+      write('$ ' + val, 'muted');
       route(val);
       input.value = '';
     }
   });
-
-  document.querySelectorAll('[data-run]').forEach(btn => {
-    btn.addEventListener('click', () => { const c = btn.getAttribute('data-run'); S.write(`$ ${c}`, 'muted'); route(c); });
+  document.querySelectorAll('[data-run]').forEach(function(b){
+    b.addEventListener('click', function(){
+      var c = b.getAttribute('data-run');
+      write('$ ' + c, 'muted'); route(c);
+    });
   });
+  document.getElementById('btnHelp').addEventListener('click', function(){ route('help'); });
+  document.getElementById('btnReset').addEventListener('click', function(){ route('reset'); });
 
-  const setMap = file => {
-    const url = URL.createObjectURL(file);
-    mapbox.innerHTML = `<img alt="Area map" src="${url}">`;
-    S.write('Map loaded into side panel.');
-  };
-  mapfile.addEventListener('change', e => {
-    const f = e.target.files?.[0]; if (f) setMap(f);
-  });
-  ['dragover', 'drop'].forEach(ev => {
-    mapbox.addEventListener(ev, e => { e.preventDefault(); if (ev === 'drop') { const f = e.dataTransfer.files?.[0]; if (f) setMap(f); } });
-  });
-
-  S.write('ECHO-INTELNET v1.0 · Training build', 'muted');
-  S.write(`${data.title}: ${data.objective}`);
-  S.hr();
-  updatePanel();
+  // —— Boot banner —— //
+  write('ECHO-INTELNET v1.1 · Training build', 'muted');
+  write('Objective: recover the target address in the field, then connect and retrieve TWO 4‑digit codes.');
+  hr(); setHost(); updatePanel();
 })();
