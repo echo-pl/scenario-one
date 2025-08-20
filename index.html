@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Echo Platoon Intelligence Network</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-bx4V2mJrL1IzBgE4c3OJbGdv8ImZ/Sc7VcRbP5hqjv3Vv4Y20N6l04e6QF6UVx/F4WRzE7vOjIvmhjYQdkT1Fg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+  <div id="landing">
+    <h1>Echo Platoon Intelligence Network</h1>
+    <p class="tagline">Australian Army Cadets training simulation; no real networks accessed.</p>
+    <div id="scenario-list" class="scenarios"></div>
+  </div>
+
+  <div id="terminal" class="terminal hidden" role="region" aria-live="polite">
+    <div id="log"></div>
+    <div class="input-line">
+      <span class="prompt">&gt;</span>
+      <input id="cmd" autocomplete="off" aria-label="Command line" />
+      <span class="cursor blink">_</span>
+    </div>
+    <div class="controls">
+      <button id="help-btn" class="icon-btn" title="Help"><i class="fa fa-question-circle"></i></button>
+      <button id="reset-btn" class="icon-btn" title="Reset"><i class="fa fa-undo"></i></button>
+    </div>
+  </div>
+
+  <script type="module" src="js/loader.js"></script>
+</body>
+</html>
