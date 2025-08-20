@@ -1,35 +1,86 @@
-<!DOCTYPE html>
-<html lang="en-AU">
+<!doctype html>
+<html lang="en-au">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Echo Platoon Intelligence Network</title>
-  <link rel="stylesheet" href="css/style.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-bx4V2mJrL1IzBgE4c3OJbGdv8ImZ/Sc7VcRbP5hqjv3Vv4Y20N6l04e6QF6UVx/F4WRzE7vOjIvmhjYQdkT1Fg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="css/terminal.css" />
 </head>
 <body>
-  <div id="landing">
-    <h1>Echo Platoon Intelligence Network</h1>
-    <p class="tagline">Australian Army Cadets training simulation; no real networks accessed.</p>
-    <div id="scenario-list" class="scenarios"></div>
+  <header>
+    <div class="wrap">
+      <div class="brand">
+        <div class="badge">⚔️</div>
+        <div>
+          <div style="font-size:14px;opacity:.85">Echo Platoon</div>
+          <div style="font-size:18px;line-height:1">INTELNET – Training Terminal</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Terminal -->
+    <section class="term" aria-label="Terminal">
+      <div class="term-bar">
+        <span class="dot"></span><span class="dot yellow"></span><span class="dot green"></span>
+        <span class="term-title">/dev/ttyECHO :: simulated offline console</span>
+      </div>
+      <div id="screen" class="screen" role="log" aria-live="polite"></div>
+      <div class="term-bar" style="gap:10px">
+        <span class="prompt">echo@ops</span><span class="host">/alpha?</span><span>$</span>
+        <input id="cmd" class="cmd" type="text" autofocus spellcheck="false" autocomplete="off" placeholder="type 'help' to begin…" />
+        <span class="caret" aria-hidden="true"></span>
+      </div>
+    </section>
+
+    <!-- Side panel -->
+    <aside class="panel">
+      <h3>Mission Panel</h3>
+      <div class="body grid">
+        <div class="status">
+          <div class="k">Objective</div><div class="v" id="objective"></div>
+          <div class="k">Alpha node</div><div class="v" id="alphaState">Unknown</div>
+          <div class="k">Bravo node</div><div class="v" id="bravoState">Unknown</div>
+          <div class="k">Progress</div><div class="v" id="progress"></div>
+        </div>
+
+        <div>
+          <div style="margin:.5rem 0 .25rem;color:#cfd7bf;">Quick actions</div>
+          <div class="chips">
+            <button class="btn" data-run="scan">Run scan</button>
+            <button class="btn" data-run="hint">Hint</button>
+            <button class="btn" data-run="map">Show map</button>
+            <button class="btn" data-run="reset">Reset</button>
+            <button class="btn" data-run="help">Help</button>
+          </div>
+        </div>
+
+        <div>
+          <div style="margin:.5rem 0 .25rem;color:#cfd7bf;">Area map (optional)</div>
+          <div id="mapbox" class="mapbox" tabindex="0">
+            <div>
+              <div>Drop a map image here or</div>
+              <div><label class="btn" style="margin-top:8px;cursor:pointer">
+                <input id="mapfile" type="file" accept="image/*" hidden />
+                Upload image
+              </label></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="font-size:12px;color:#a5ae98">
+          Tip: Use <code>decode base64 &lt;file-or-text&gt;</code> or <code>decode rot13 &lt;file-or-text&gt;</code>.<br />
+          Submit a code with <code>submit 1234</code>.
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <div class="foot">
+    This activity is a training simulation (offline). No real systems are accessed. Ensure supervision and age‑appropriate delivery per Defence Youth Policy.
   </div>
 
-  <div id="terminal" class="terminal hidden" role="region" aria-live="polite">
-    <div id="log"></div>
-    <div class="input-line">
-      <span class="prompt">&gt;</span>
-      <input id="cmd" autocomplete="off" aria-label="Command line" />
-      <span class="cursor blink">_</span>
-    </div>
-    <div class="controls">
-      <button id="help-btn" class="icon-btn" title="Help"><i class="fa fa-question-circle"></i></button>
-      <button id="reset-btn" class="icon-btn" title="Reset"><i class="fa fa-undo"></i></button>
-    </div>
-  </div>
-
-  <script type="module" src="js/loader.js"></script>
+  <script type="module" src="js/terminal.js"></script>
 </body>
 </html>
