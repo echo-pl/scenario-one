@@ -3,6 +3,12 @@
 Scenarios extend the Echo Platoon Intelligence Network with training exercises.
 Files in this folder are served statically so avoid sensitive information.
 
+## Sample scenarios
+- `scenario-patrol.json` - single-node briefing (easy)
+- `scenario-camp.json` - abandoned camp with encoded printouts (medium)
+- `scenario-border.json` - multi-node frontier sweep (hard)
+- `scenario-one.json` - training example with base64 and ROT13.
+
 ## JSON schema
 A JSON scenario describes nodes, files and hints.
 

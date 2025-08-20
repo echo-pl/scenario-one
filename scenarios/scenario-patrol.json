@@ -1,0 +1,20 @@
+{
+  "id": "patrol-brief",
+  "title": "OP PATROL BRIEF",
+  "objective": "Review the briefing node and recover the single code.",
+  "codes": { "brief": "6720" },
+  "nodes": {
+    "brief": {
+      "name": "patrol-briefing",
+      "banner": "Portable terminal left by HQ.",
+      "files": {
+        "orders.txt": "Proceed to grid CF-23. Code 6720 authorises access."
+      }
+    }
+  },
+  "hints": {
+    "global": ["Use `scan` to find the node, then `connect brief`."],
+    "brief": ["Read orders.txt for the code."]
+  }
+}
+

@@ -1,0 +1,39 @@
+{
+  "id": "ghost-camp",
+  "title": "OP GHOST CAMP",
+  "objective": "Scrape codes from equipment at an abandoned camp.",
+  "codes": {
+    "router": "4821",
+    "cache": "7719"
+  },
+  "nodes": {
+    "router": {
+      "name": "camp-router (192.168.14.3)",
+      "banner": "Dusty router humming quietly.",
+      "files": {
+        "logs/printout.txt": "Found IP on paper: 192.168.14.3",
+        "logs/secure.msg": "Q29kZTogNDgyMQ=="
+      }
+    },
+    "cache": {
+      "name": "supply-cache (10.0.0.8)",
+      "banner": "Rusty lockbox awaiting input.",
+      "files": {
+        "drop/message.enc": "Pbqr: 7719",
+        "drop/map.txt": "Cache near old firepit."
+      }
+    }
+  },
+  "hints": {
+    "global": [
+      "Printouts mention 192.168.14.3 and 10.0.0.8."
+    ],
+    "router": [
+      "Base64 decode /logs/secure.msg."
+    ],
+    "cache": [
+      "ROT13 the message in /drop."
+    ]
+  }
+}
+
