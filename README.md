@@ -11,6 +11,7 @@ fully offline. At boot the terminal waits in an idle state; type `run <file>`
 to load a scenario such as `run scenario-one.json`. Use keyboard commands to
 explore nodes and recover codes once a scenario is active.
 
+
 ## Development
 This project is pure client-side. To test locally run a simple web server:
 
