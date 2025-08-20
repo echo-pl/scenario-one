@@ -7,76 +7,68 @@
   <link rel="stylesheet" href="css/terminal.css" />
 </head>
 <body>
-  <header>
-    <div class="wrap">
-      <div class="brand">
-        <div class="badge">⚔️</div>
-        <div>
-          <div style="font-size:14px;opacity:.85">Echo Platoon</div>
-          <div style="font-size:18px;line-height:1">INTELNET – Training Terminal</div>
-        </div>
+
+  <header class="site-head">
+  <div class="wrap">
+    <div class="brand">
+      <span class="badge">⚔️</span>
+      <div class="brand-text">
+        <div class="kicker">Echo Platoon</div>
+        <h1 class="title">INTELNET – Encrypted Terminal</h1>
       </div>
     </div>
-  </header>
-
-  <main>
-    <!-- Terminal -->
-    <section class="term" aria-label="Terminal">
-      <div class="term-bar">
-        <span class="dot"></span><span class="dot yellow"></span><span class="dot green"></span>
-        <span class="term-title">/dev/ttyECHO :: simulated offline console</span>
-      </div>
-      <div id="screen" class="screen" role="log" aria-live="polite"></div>
-      <div class="term-bar" style="gap:10px">
-        <span class="prompt">echo@ops</span><span class="host">/alpha?</span><span>$</span>
-        <input id="cmd" class="cmd" type="text" autofocus spellcheck="false" autocomplete="off" placeholder="type 'help' to begin…" />
-        <span class="caret" aria-hidden="true"></span>
-      </div>
-    </section>
-
-    <!-- Side panel -->
-    <aside class="panel">
-      <h3>Mission Panel</h3>
-      <div class="body grid">
-        <div class="status">
-
-        </div>
-
-        <div>
-          <div style="margin:.5rem 0 .25rem;color:#cfd7bf;">Quick actions</div>
-          <div class="chips">
-            <button class="btn" data-run="scan">Run scan</button>
-            <button class="btn" data-run="hint">Hint</button>
-            <button class="btn" data-run="map">Show map</button>
-            <button class="btn" data-run="reset">Reset</button>
-            <button class="btn" data-run="help">Help</button>
-          </div>
-        </div>
-
-        <div>
-          <div style="margin:.5rem 0 .25rem;color:#cfd7bf;">Area map (optional)</div>
-          <div id="mapbox" class="mapbox" tabindex="0">
-            <div>
-              <div>Drop a map image here or</div>
-              <div><label class="btn" style="margin-top:8px;cursor:pointer">
-                <input id="mapfile" type="file" accept="image/*" hidden />
-                Upload image
-              </label></div>
-            </div>
-          </div>
-        </div>
-
-        <div style="font-size:12px;color:#a5ae98">
-
-          Submit a code with <code>submit 1234</code>.
-        </div>
-      </div>
-    </aside>
-  </main>
-
-  <div class="foot">
-    This activity is a training simulation (offline). No real systems are accessed. Ensure supervision and age‑appropriate delivery per Defence Youth Policy.
   </div>
+</header>
+
+<main class="wrap main-grid">
+  <!-- Terminal -->
+  <section class="terminal" aria-label="Terminal">
+    <div class="term-bar">
+      <span class="dot red"></span><span class="dot amber"></span><span class="dot green"></span>
+      <span class="bar-title">/dev/int/tools :: echo-int.sh console</span>
+      <button class="btn-mini" id="btnHelp" title="Help"><i class="fa fa-circle-question"></i></button>
+      <button class="btn-mini" id="btnReset" title="Reset"><i class="fa fa-rotate-right"></i></button>
+    </div>
+
+    <div id="screen" class="screen" role="log" aria-live="polite"></div>
+
+    <div class="term-input">
+      <span class="prompt">echo@ops</span><span class="host" id="host">/</span><span class="dollar">$</span>
+      <input id="cmd" class="cmd" type="text" autocomplete="off" spellcheck="false" placeholder="type 'help' to begin…" />
+      <span class="caret" aria-hidden="true"></span>
+    </div>
+  </section>
+
+  <!-- Side panel (status + quick actions) -->
+  <aside class="panel">
+    <h2 class="panel-head">Mission Panel</h2>
+    <div class="panel-body">
+      <dl class="status">
+        <dt>Objective</dt><dd>Find two 4‑digit codes</dd>
+        <dt>Alpha node</dt><dd id="alphaState">Unknown</dd>
+        <dt>Bravo node</dt><dd id="bravoState">Unknown</dd>
+        <dt>Progress</dt><dd id="progress">0 / 2 codes</dd>
+      </dl>
+
+      <div class="actions">
+        <button class="btn" data-run="scan">Run scan</button>
+        <button class="btn" data-run="hint">Hint</button>
+        <button class="btn" data-run="status">Status</button>
+        <button class="btn" data-run="clear">Clear</button>
+        <button class="btn" data-run="reset">Reset</button>
+      </div>
+
+<p class="muted" id="brief">
+  Field intel required. Recover the <em>target address</em> first, then attempt a connection.<br>
+  Useful commands: <code>scan</code>, <code>connect &lt;ip|alpha|bravo&gt;</code>, <code>ls</code>, <code>cat</code>, <code>decode</code>, <code>status</code>, <code>disconnect</code>.
+</p>
+    </div>
+  </aside>
+</main>
+
+<footer class="foot wrap">
+  This activity is a training simulation for the Australian Army Cadets (Australian English). No real systems are accessed.
+</footer>
 
   <script type="module" src="js/terminal.js"></script>
 </body>
