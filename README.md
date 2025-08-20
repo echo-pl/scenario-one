@@ -6,7 +6,8 @@ connect to real systems.
 
 ## Usage
 Open `index.html` locally or visit the GitHub Pages deployment to launch the
-training terminal. It loads `scenarios/example-basic.json` by default. Pass a
+training terminal. All CSS, scripts and images are bundled so the page works
+fully offline. It loads `scenarios/example-basic.json` by default. Pass a
 different file with `?scenario=filename.json` to load custom scenarios. Use
 keyboard commands to explore nodes and recover codes.
 
