@@ -1,7 +1,7 @@
 # Echo Platoon Intelligence Network
 
-Static training tool for the Australian Army Cadets. This site simulates an
-intelligence network for supervised exercises. It is youth-safe and does not
+Static training tool for supervised exercises. This site simulates an
+intelligence network for practice scenarios. It is youth-safe and does not
 connect to real systems.
 
 ## Usage
@@ -36,4 +36,4 @@ Create JSON or JavaScript files in `scenarios/`. See
 3. Files like `.nojekyll` ensure JSON scenario files are served.
 
 ## Licence
-MIT Licence. See [LICENSE](LICENSE).
+Apache License 2.0. See [LICENSE](LICENSE).
