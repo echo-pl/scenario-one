@@ -1,6 +1,6 @@
 {
-  "id": "example-basic",
-  "title": "Example Basic Scenario",
+  "id": "obsidian-vigil",
+  "title": "OP OBSIDIAN VIGIL",
   "objective": "Find two 4-digit codes to unlock the trophy box.",
   "codes": { "alpha": "1847", "bravo": "9302" },
   "nodes": {

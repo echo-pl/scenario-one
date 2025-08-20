@@ -1,0 +1,49 @@
+{
+  "id": "border-watch",
+  "title": "OP BORDER WATCH",
+  "objective": "Decrypt all three sensor nodes along the frontier to report activity.",
+  "codes": {
+    "relay": "5568",
+    "watch": "3142",
+    "hq": "7605"
+  },
+  "nodes": {
+    "relay": {
+      "name": "field-relay (172.16.0.5)",
+      "banner": "Temporary signal relay.",
+      "files": {
+        "msg/base64.enc": "Q29kZTogNTU2OA=="
+      }
+    },
+    "watch": {
+      "name": "overwatch-cam (172.16.0.19)",
+      "banner": "Hidden camera node.",
+      "files": {
+        "intel/rot13.msg": "Pbqr: 3142",
+        "intel/note.txt": "Camera observes ford crossing."
+      }
+    },
+    "hq": {
+      "name": "forward-hq (172.16.0.1)",
+      "banner": "Forward HQ terminal.",
+      "files": {
+        "log/cipher.txt": "Uryyb, pbqr vf 7605",
+        "log/sitrep.txt": "Hold position until relieved."
+      }
+    }
+  },
+  "hints": {
+    "global": [
+      "Sensors broadcast at 172.16.0.x addresses."
+    ],
+    "relay": [
+      "Base64 decode /msg/base64.enc."
+    ],
+    "watch": [
+      "ROT13 the message in /intel."
+    ],
+    "hq": [
+      "ROT13 the cipher in /log."
+    ]
+  }
+}

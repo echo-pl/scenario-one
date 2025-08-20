@@ -15,31 +15,14 @@
 
   // —— Scenario data —— //
   var GAME = {
-    codes: { alpha: "1847", bravo: "9302" },
-    found: { alpha: false, bravo: false },
+    codes: {},
+    found: {},
     currentHost: null,
     connected: false,
     sessionEndsAt: null,
-    nodes: {
-      alpha: {
-        name: "raven-relay (alpha)",
-        banner: "Connected to ALPHA relay. Authorised users only.",
-        files: {
-          "ops/encoded.msg": "Q09ERTogMTg0Nw==", // "CODE: 1847"
-          "ops/readme.txt": "Ops note: bandwidth caps remain in effect.\nReminder: never store codes in plain text.",
-          "docs/notice.txt": "If intercepted: all sensitive strings MUST be base64 before transit."
-        }
-      },
-      bravo: {
-        name: "raven-store (bravo)",
-        banner: "Connected to BRAVO storage node. Minimal services exposed.",
-        files: {
-          "intel/msg.enc": "FRPERG PVCURE: EBG13\nCODES: ABG VA CYNPR.\nCNFFJBEQ: \"ENIRA\".\nQRFP: 'Pbqr vf va gur frpbaq yvar'.",
-          "intel/manifest.txt": "Archive rotation weekly. Cipher hint embedded in message.",
-          "tmp/raven.dat": "Svefg ahzore: abg urer."
-        }
-      }
-    }
+    nodes: {},
+    hints: {},
+    hintIndex: {}
   };
 
   // —— DOM —— //
@@ -50,6 +33,7 @@
   var bravoState = document.getElementById('bravoState');
   var progressEl = document.getElementById('progress');
   var brief = document.getElementById('brief');
+  var objectiveEl = document.getElementById('objective');
 
   // —— Helpers —— //
   function write(txt, cls){
@@ -121,6 +105,30 @@
     return (GAME.connected && GAME.sessionEndsAt) ? (GAME.sessionEndsAt - Date.now()) : 0;
   }
 
+  function resetGameState(msg){
+    stopTimer();
+    Object.keys(GAME.found).forEach(function(k){ GAME.found[k] = false; });
+    GAME.currentHost = null;
+    GAME.connected = false;
+    GAME.sessionEndsAt = null;
+    GAME.hintIndex = {};
+    setHost(); updatePanel();
+    if(msg) write(msg, 'warn');
+  }
+
+  function loadScenario(data){
+    resetGameState();
+    GAME.codes = data.codes || {};
+    GAME.nodes = data.nodes || {};
+    GAME.hints = data.hints || {};
+    GAME.hintIndex = {};
+    GAME.found = {};
+    Object.keys(GAME.codes).forEach(function(k){ GAME.found[k] = false; });
+    objectiveEl.textContent = data.objective || '';
+    write('Loaded scenario: ' + (data.title || data.id), 'success');
+    updatePanel();
+  }
+
   // —— Session management —— //
   var timerId = null;
   function startTimer(){
@@ -189,8 +197,10 @@
       write('  decode rot13  <x>       Decode ROT13 of <file|text>');
       write('  status                  Show progress and session time');
       write('  submit 1234             Submit a discovered code');
+      write('  hint                    Show a hint (if available)');
       write('  clear                   Clear the screen');
       write('  reset                   Reset the exercise');
+      write('  run <file>              Load a scenario JSON');
     },
     clear: function(){ screen.innerHTML = ''; },
     scan: function(){
@@ -275,14 +285,24 @@
       if(!hit){ write('Code rejected.', 'err'); }
       updatePanel(); victoryCheck();
     },
+    hint: function(){
+      var ctx = GAME.currentHost || 'global';
+      var list = GAME.hints[ctx] || GAME.hints.global || [];
+      if(!list.length){ write('No hints available.', 'warn'); return; }
+      var idx = GAME.hintIndex[ctx] || 0;
+      if(idx >= list.length){ write('No more hints.', 'warn'); return; }
+      write('Hint: ' + list[idx], 'muted');
+      GAME.hintIndex[ctx] = idx + 1;
+    },
     reset: function(){
-      stopTimer();
-      GAME.found.alpha = GAME.found.bravo = false;
-      GAME.currentHost = null;
-      GAME.connected = false;
-      GAME.sessionEndsAt = null;
-      setHost(); updatePanel();
-      write('Exercise state reset.', 'warn');
+      resetGameState('Exercise state reset.');
+    },
+    run: function(file){
+      if(!file){ write('Usage: run <scenario.json>', 'warn'); return; }
+      fetch('scenarios/' + file)
+        .then(function(res){ if(!res.ok) throw new Error(); return res.json(); })
+        .then(function(data){ loadScenario(data); })
+        .catch(function(){ write('Scenario load failed.', 'err'); });
     }
   };
 
@@ -314,7 +334,7 @@
   document.getElementById('btnReset').addEventListener('click', function(){ route('reset'); });
 
   // —— Boot banner —— //
-  write('ECHO-INTELNET v1.1 · Training build', 'muted');
-  write('Objective: recover the target address in the field, then connect and retrieve TWO 4‑digit codes.');
+  write('ECHO-INTELNET v1.2 · Training build', 'muted');
+  write('No scenario loaded. Staff: run <file> (e.g., run scenario-one.json)', 'muted');
   hr(); setHost(); updatePanel();
 })();
