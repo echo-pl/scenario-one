@@ -21,9 +21,9 @@ body{
   margin:0;
   color:var(--ink);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono","Courier New", monospace;
-  background:
-    linear-gradient(180deg, #0d1309 0%, #0a0d08 60%),
-    url('https://224armycadetunit.com/wp-content/uploads/2024/08/bg-topo-map.svg');
+    background:
+      linear-gradient(180deg, #0d1309 0%, #0a0d08 60%),
+      url('../img/bg-topo-map.svg');
   background-size: auto, 1400px;
   background-repeat: repeat;
 }
