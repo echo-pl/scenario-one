@@ -155,6 +155,7 @@ function disconnectUser(){
 function resetGameState(msg){
   stopTimer();
   Object.keys(GAME.found).forEach(function(k){ GAME.found[k] = false; });
+  GAME.hintIndex = {};
   GAME.currentHost = null;
   GAME.connected = false;
   GAME.sessionEndsAt = null;
@@ -169,6 +170,9 @@ function loadScenario(data){
   GAME.codes = data.codes || {};
   GAME.nodes = data.nodes || {};
   GAME.completeMessage = data.completeMessage || null;
+  GAME.hints = data.hints || {};
+  GAME.hintIndex = {};
+  if(!Array.isArray(GAME.hints.global)) GAME.hints.global = [];
   GAME.found = {};
   objectiveEl.textContent = data.objective || '';
   Array.from(statusEl.querySelectorAll('.node-item')).forEach(function(el){ el.remove(); });

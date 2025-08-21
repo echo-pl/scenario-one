@@ -18,7 +18,9 @@ export const GAME = {
   connected: false,
   sessionEndsAt: null,
   nodes: {},
-  completeMessage: null
+  completeMessage: null,
+  hints: {},
+  hintIndex: {}
 };
 
 // --- Utilities --- //

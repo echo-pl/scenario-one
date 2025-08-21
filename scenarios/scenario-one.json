@@ -25,8 +25,15 @@
     }
   },
   "hints": {
-    "global": ["Use `scan`, then `connect alpha`.", "Try `decode base64` and `decode rot13`."],
-    "alpha": ["Check /ops files; one is Base64."],
-    "bravo": ["ROT13 the message in /intel."]
+    "global": [
+      "Run `scan` to find targets, then `connect alpha` to begin.",
+      "Encrypted notes use Base64 and ROT13; try `decode base64` and `decode rot13`."
+    ],
+    "alpha": [
+      "Check the /ops directory; decode `encoded.msg` with Base64 to uncover the first code."
+    ],
+    "bravo": [
+      "The file in /intel is ROT13; decode it to reveal the second code."
+    ]
   }
 }

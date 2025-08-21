@@ -32,8 +32,14 @@
     }
   },
   "hints": {
-    "global": ["Use decode base64 and decode rot13 to read encrypted files."],
-    "alpha": ["The ops file hides the first code."],
-    "bravo": ["Raven unit message conceals the second code."]
+    "global": [
+      "Some files are encoded with Base64 or ROT13; decode them and note the MGRS grids."
+    ],
+    "alpha": [
+      "Open logs/code.enc and decode Base64 for the first code and its grid."
+    ],
+    "bravo": [
+      "The raven message in /intel is ROT13 encoded and reveals the second code with its grid."
+    ]
   }
 }

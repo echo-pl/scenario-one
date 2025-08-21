@@ -30,6 +30,7 @@ export function createHandlers(deps){
       write('Available commands:', 'muted');
       write('  help                    Show this help');
       write('  scan                    Passive sweep (may not reveal hidden hosts)');
+      write('  hint                    Show a hint');
       write('  connect <ip|name>  Attempt link to target');
       write('  disconnect              Terminate current session');
       write('  ls                      List files on current node');
@@ -50,6 +51,22 @@ export function createHandlers(deps){
         write('No broadcast beacons detected. Field reconnaissance may be required.', 'warn');
         write('Tip: look for a target address in recovered notes.', 'muted');
       }, 300);
+    },
+    hint(){
+      const hints = GAME.hints || {};
+      const idxMap = GAME.hintIndex || {};
+      let key = 'global';
+      if(GAME.connected && GAME.currentHost && Array.isArray(hints[GAME.currentHost])){
+        key = GAME.currentHost;
+      }
+      const list = hints[key] || [];
+      const idx = idxMap[key] || 0;
+      if(idx < list.length){
+        write('Hint: ' + list[idx], 'muted');
+        idxMap[key] = idx + 1;
+      } else {
+        write('No more hints available.', 'warn');
+      }
     },
     connect(arg){
       if(!arg){ write('Usage: connect <ip or name>', 'warn'); return; }
