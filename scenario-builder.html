@@ -14,6 +14,8 @@
     legend{padding:0 6px;font-size:14px}
     .flex{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
     .btn-small{padding:4px 6px;font-size:12px}
+    .actions{display:flex;gap:8px;margin:10px 0}
+    [draggable=true]{cursor:move}
     pre{background:#0d1209;border:1px solid var(--grid);border-radius:8px;padding:10px;overflow:auto}
   </style>
 </head>
@@ -34,7 +36,7 @@
 <section class="panel">
   <h2 class="panel-head">Scenario Builder</h2>
   <div class="panel-body">
-    <p class="muted">Fill out the fields below. Add nodes, codes, and hints as required. The scenario JSON updates live below for copy and paste, or click <strong>Update JSON</strong> to refresh it manually.</p>
+    <p class="muted">Fill out the fields below. Add nodes, codes, and hints as required. Drag items to reorder them. The scenario JSON updates live below for copy and paste, or click <strong>Update JSON</strong> to refresh it manually.</p>
     <form id="builder">
        <div class="form-grid">
          <div>
@@ -73,6 +75,7 @@
 
     <div class="actions">
       <button type="button" class="btn" id="updateJson">Update JSON</button>
+      <button type="button" class="btn" id="downloadJson">Download JSON</button>
     </div>
 
     <pre id="output"></pre>
@@ -81,133 +84,7 @@
 </section>
 </main>
 
-<script>
-  const codesDiv = document.getElementById('codes');
-  const nodesDiv = document.getElementById('nodes');
-  const globalHintsDiv = document.getElementById('globalHints');
-  const outputPre = document.getElementById('output');
-  const builderForm = document.getElementById('builder');
-
-  const updateOutput = ()=>{
-    const scenario = {
-      id: document.getElementById('id').value,
-      title: document.getElementById('title').value,
-      objective: document.getElementById('objective').value,
-      codes: {},
-      nodes: {},
-      hints: { global: [] }
-    };
-    codesDiv.querySelectorAll('div.flex').forEach(div=>{
-      const inputs = div.querySelectorAll('input');
-      const key = inputs[0].value.trim();
-      const val = inputs[1].value.trim();
-      if(key && val){ scenario.codes[key] = val; }
-    });
-    nodesDiv.querySelectorAll('fieldset').forEach(fs=>{
-      const key = fs.querySelector('.node-key').value.trim();
-      if(!key) return;
-      const node = {
-        name: fs.querySelector('.node-name').value,
-        banner: fs.querySelector('.node-banner').value,
-        ip: fs.querySelector('.node-ip').value,
-        visible: fs.querySelector('.node-visible').checked,
-        files: {}
-      };
-      fs.querySelectorAll('.file-list > div.flex').forEach(f=>{
-        const inputs = f.querySelectorAll('input,textarea');
-        const path = inputs[0].value.trim();
-        const content = inputs[1].value;
-        if(path){ node.files[path] = content; }
-      });
-      const hints = [];
-      fs.querySelectorAll('.hint-list > div.flex input').forEach(h=>{
-        const val = h.value.trim();
-        if(val) hints.push(val);
-      });
-      if(hints.length) scenario.hints[key] = hints;
-      scenario.nodes[key] = node;
-    });
-    globalHintsDiv.querySelectorAll('div.flex input').forEach(h=>{
-      const val = h.value.trim();
-      if(val) scenario.hints.global.push(val);
-    });
-    outputPre.textContent = JSON.stringify(scenario, null, 2);
-  };
-
-  const addCode = (key='', value='')=>{
-    const wrap = document.createElement('div');
-    wrap.className = 'flex';
-    wrap.innerHTML = `
-      <input type="text" placeholder="Key (e.g. alpha)" value="${key}" />
-      <input type="text" placeholder="4-digit code" value="${value}" />
-      <button type="button" class="btn btn-small">×</button>
-    `;
-    wrap.querySelector('button').addEventListener('click', ()=>{ wrap.remove(); updateOutput(); });
-    codesDiv.appendChild(wrap);
-    updateOutput();
-  };
-  const addFile = (container)=>{
-    const wrap = document.createElement('div');
-    wrap.className = 'flex';
-    wrap.innerHTML = `
-      <input type="text" placeholder="path/to/file.txt" />
-      <textarea placeholder="file contents"></textarea>
-      <button type="button" class="btn btn-small">×</button>
-    `;
-    wrap.querySelector('button').addEventListener('click', ()=>{ wrap.remove(); updateOutput(); });
-    container.appendChild(wrap);
-    updateOutput();
-  };
-  const addHint = (container, value='')=>{
-    const wrap = document.createElement('div');
-    wrap.className = 'flex';
-    wrap.innerHTML = `
-      <input type="text" value="${value}" />
-      <button type="button" class="btn btn-small">×</button>
-    `;
-    wrap.querySelector('button').addEventListener('click', ()=>{ wrap.remove(); updateOutput(); });
-    container.appendChild(wrap);
-    updateOutput();
-  };
-  const addNode = ()=>{
-    const wrap = document.createElement('fieldset');
-    wrap.innerHTML = `
-      <legend>Node</legend>
-      <div class="form-grid">
-        <div><label>Key</label><input type="text" class="node-key" placeholder="alpha" /></div>
-        <div><label>Name</label><input type="text" class="node-name" /></div>
-        <div><label>Banner</label><input type="text" class="node-banner" /></div>
-        <div><label>IP</label><input type="text" class="node-ip" /></div>
-        <div><label><input type="checkbox" class="node-visible" checked /> Visible</label></div>
-      </div>
-      <fieldset class="files"><legend>Files</legend><div class="file-list"></div>
-         <button type="button" class="btn btn-small add-file">Add file</button>
-      </fieldset>
-      <fieldset class="hints"><legend>Hints</legend><div class="hint-list"></div>
-         <button type="button" class="btn btn-small add-hint">Add hint</button>
-      </fieldset>
-      <button type="button" class="btn btn-small remove-node">Remove node</button>
-    `;
-    wrap.querySelector('.add-file').addEventListener('click', ()=> addFile(wrap.querySelector('.file-list')));
-    wrap.querySelector('.add-hint').addEventListener('click', ()=> addHint(wrap.querySelector('.hint-list')));
-    wrap.querySelector('.remove-node').addEventListener('click', ()=>{ wrap.remove(); updateOutput(); });
-    nodesDiv.appendChild(wrap);
-    updateOutput();
-  };
-
-  document.getElementById('addCode').addEventListener('click', ()=> addCode());
-  document.getElementById('addNode').addEventListener('click', ()=> addNode());
-  document.getElementById('addGlobalHint').addEventListener('click', ()=> addHint(globalHintsDiv));
-  document.getElementById('updateJson').addEventListener('click', updateOutput);
-
-  builderForm.addEventListener('input', updateOutput);
-  builderForm.addEventListener('change', updateOutput);
-
-  addCode(); // initial fields
-  addNode();
-  addHint(globalHintsDiv);
-  updateOutput();
-</script>
+<script type="module" src="js/builder.js"></script>
 </body>
 </html>
 
