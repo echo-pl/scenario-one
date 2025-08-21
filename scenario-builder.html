@@ -34,7 +34,7 @@
 <section class="panel">
   <h2 class="panel-head">Scenario Builder</h2>
   <div class="panel-body">
-    <p class="muted">Fill out the fields below. Add nodes, codes, and hints as required. When finished, click <em>Download JSON</em> to save the scenario file.</p>
+    <p class="muted">Fill out the fields below. Add nodes, codes, and hints as required. The scenario JSON updates live below for copy and paste.</p>
     <form id="builder">
        <div class="form-grid">
          <div>
@@ -69,12 +69,9 @@
          <button type="button" class="btn btn-small" id="addGlobalHint">Add hint</button>
        </fieldset>
 
-       <div class="actions">
-         <button type="button" class="btn" id="download">Download JSON</button>
-       </div>
     </form>
 
-    <pre id="output" class="hidden"></pre>
+    <pre id="output"></pre>
 
   </div>
 </section>
@@ -85,73 +82,9 @@
   const nodesDiv = document.getElementById('nodes');
   const globalHintsDiv = document.getElementById('globalHints');
   const outputPre = document.getElementById('output');
+  const builderForm = document.getElementById('builder');
 
-  const addCode = (key='', value='')=>{
-    const wrap = document.createElement('div');
-    wrap.className = 'flex';
-    wrap.innerHTML = `
-      <input type="text" placeholder="Key (e.g. alpha)" value="${key}" />
-      <input type="text" placeholder="4-digit code" value="${value}" />
-      <button type="button" class="btn btn-small">×</button>
-    `;
-    wrap.querySelector('button').addEventListener('click', ()=> wrap.remove());
-    codesDiv.appendChild(wrap);
-  };
-  const addFile = (container)=>{
-    const wrap = document.createElement('div');
-    wrap.className = 'flex';
-    wrap.innerHTML = `
-      <input type="text" placeholder="path/to/file.txt" />
-      <textarea placeholder="file contents"></textarea>
-      <button type="button" class="btn btn-small">×</button>
-    `;
-    wrap.querySelector('button').addEventListener('click', ()=> wrap.remove());
-    container.appendChild(wrap);
-  };
-  const addHint = (container, value='')=>{
-    const wrap = document.createElement('div');
-    wrap.className = 'flex';
-    wrap.innerHTML = `
-      <input type="text" value="${value}" />
-      <button type="button" class="btn btn-small">×</button>
-    `;
-    wrap.querySelector('button').addEventListener('click', ()=> wrap.remove());
-    container.appendChild(wrap);
-  };
-  const addNode = ()=>{
-    const wrap = document.createElement('fieldset');
-    wrap.innerHTML = `
-      <legend>Node</legend>
-      <div class="form-grid">
-        <div><label>Key</label><input type="text" class="node-key" placeholder="alpha" /></div>
-        <div><label>Name</label><input type="text" class="node-name" /></div>
-        <div><label>Banner</label><input type="text" class="node-banner" /></div>
-        <div><label>IP</label><input type="text" class="node-ip" /></div>
-        <div><label><input type="checkbox" class="node-visible" checked /> Visible</label></div>
-      </div>
-      <fieldset class="files"><legend>Files</legend><div class="file-list"></div>
-         <button type="button" class="btn btn-small add-file">Add file</button>
-      </fieldset>
-      <fieldset class="hints"><legend>Hints</legend><div class="hint-list"></div>
-         <button type="button" class="btn btn-small add-hint">Add hint</button>
-      </fieldset>
-      <button type="button" class="btn btn-small remove-node">Remove node</button>
-    `;
-    wrap.querySelector('.add-file').addEventListener('click', ()=> addFile(wrap.querySelector('.file-list')));
-    wrap.querySelector('.add-hint').addEventListener('click', ()=> addHint(wrap.querySelector('.hint-list')));
-    wrap.querySelector('.remove-node').addEventListener('click', ()=> wrap.remove());
-    nodesDiv.appendChild(wrap);
-  };
-
-  document.getElementById('addCode').addEventListener('click', ()=> addCode());
-  document.getElementById('addNode').addEventListener('click', ()=> addNode());
-  document.getElementById('addGlobalHint').addEventListener('click', ()=> addHint(globalHintsDiv));
-
-  addCode(); // initial fields
-  addNode();
-  addHint(globalHintsDiv);
-
-  document.getElementById('download').addEventListener('click', ()=>{
+  const updateOutput = ()=>{
     const scenario = {
       id: document.getElementById('id').value,
       title: document.getElementById('title').value,
@@ -160,14 +93,12 @@
       nodes: {},
       hints: { global: [] }
     };
-    // codes
     codesDiv.querySelectorAll('div.flex').forEach(div=>{
       const inputs = div.querySelectorAll('input');
       const key = inputs[0].value.trim();
       const val = inputs[1].value.trim();
       if(key && val){ scenario.codes[key] = val; }
     });
-    // nodes
     nodesDiv.querySelectorAll('fieldset').forEach(fs=>{
       const key = fs.querySelector('.node-key').value.trim();
       if(!key) return;
@@ -192,21 +123,85 @@
       if(hints.length) scenario.hints[key] = hints;
       scenario.nodes[key] = node;
     });
-    // global hints
     globalHintsDiv.querySelectorAll('div.flex input').forEach(h=>{
       const val = h.value.trim();
       if(val) scenario.hints.global.push(val);
     });
-    const json = JSON.stringify(scenario, null, 2);
-    outputPre.textContent = json;
-    outputPre.classList.remove('hidden');
+    outputPre.textContent = JSON.stringify(scenario, null, 2);
+  };
 
-    const blob = new Blob([json], {type:'application/json'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = (scenario.id||'scenario') + '.json';
-    a.click();
-  });
+  const addCode = (key='', value='')=>{
+    const wrap = document.createElement('div');
+    wrap.className = 'flex';
+    wrap.innerHTML = `
+      <input type="text" placeholder="Key (e.g. alpha)" value="${key}" />
+      <input type="text" placeholder="4-digit code" value="${value}" />
+      <button type="button" class="btn btn-small">×</button>
+    `;
+    wrap.querySelector('button').addEventListener('click', ()=>{ wrap.remove(); updateOutput(); });
+    codesDiv.appendChild(wrap);
+    updateOutput();
+  };
+  const addFile = (container)=>{
+    const wrap = document.createElement('div');
+    wrap.className = 'flex';
+    wrap.innerHTML = `
+      <input type="text" placeholder="path/to/file.txt" />
+      <textarea placeholder="file contents"></textarea>
+      <button type="button" class="btn btn-small">×</button>
+    `;
+    wrap.querySelector('button').addEventListener('click', ()=>{ wrap.remove(); updateOutput(); });
+    container.appendChild(wrap);
+    updateOutput();
+  };
+  const addHint = (container, value='')=>{
+    const wrap = document.createElement('div');
+    wrap.className = 'flex';
+    wrap.innerHTML = `
+      <input type="text" value="${value}" />
+      <button type="button" class="btn btn-small">×</button>
+    `;
+    wrap.querySelector('button').addEventListener('click', ()=>{ wrap.remove(); updateOutput(); });
+    container.appendChild(wrap);
+    updateOutput();
+  };
+  const addNode = ()=>{
+    const wrap = document.createElement('fieldset');
+    wrap.innerHTML = `
+      <legend>Node</legend>
+      <div class="form-grid">
+        <div><label>Key</label><input type="text" class="node-key" placeholder="alpha" /></div>
+        <div><label>Name</label><input type="text" class="node-name" /></div>
+        <div><label>Banner</label><input type="text" class="node-banner" /></div>
+        <div><label>IP</label><input type="text" class="node-ip" /></div>
+        <div><label><input type="checkbox" class="node-visible" checked /> Visible</label></div>
+      </div>
+      <fieldset class="files"><legend>Files</legend><div class="file-list"></div>
+         <button type="button" class="btn btn-small add-file">Add file</button>
+      </fieldset>
+      <fieldset class="hints"><legend>Hints</legend><div class="hint-list"></div>
+         <button type="button" class="btn btn-small add-hint">Add hint</button>
+      </fieldset>
+      <button type="button" class="btn btn-small remove-node">Remove node</button>
+    `;
+    wrap.querySelector('.add-file').addEventListener('click', ()=> addFile(wrap.querySelector('.file-list')));
+    wrap.querySelector('.add-hint').addEventListener('click', ()=> addHint(wrap.querySelector('.hint-list')));
+    wrap.querySelector('.remove-node').addEventListener('click', ()=>{ wrap.remove(); updateOutput(); });
+    nodesDiv.appendChild(wrap);
+    updateOutput();
+  };
+
+  document.getElementById('addCode').addEventListener('click', ()=> addCode());
+  document.getElementById('addNode').addEventListener('click', ()=> addNode());
+  document.getElementById('addGlobalHint').addEventListener('click', ()=> addHint(globalHintsDiv));
+
+  builderForm.addEventListener('input', updateOutput);
+  builderForm.addEventListener('change', updateOutput);
+
+  addCode(); // initial fields
+  addNode();
+  addHint(globalHintsDiv);
+  updateOutput();
 </script>
 </body>
 </html>
