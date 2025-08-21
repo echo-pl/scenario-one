@@ -94,10 +94,9 @@ body{
 }
 .cmd{
   flex:1; background:transparent; color:var(--ink); border:0; outline:0; font:inherit;
+  caret-color: #c8ff8c;
 }
 .cmd::placeholder{color:#8aa07c}
-.caret{width:8px; height:16px; background:#c8ff8c; animation:blink 1s steps(1) infinite}
-@keyframes blink{50%{opacity:0}}
 
 /* Panel */
 .panel{

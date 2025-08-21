@@ -65,11 +65,7 @@
     .warn{color:#ffd07a}
     .err{color:#ff9c9c}
     .inputline{display:flex; gap:8px; align-items:flex-start}
-    .caret{
-      width:8px;height:16px;background:#c8ff8c;animation:blink 1s steps(1) infinite
-    }
-    @keyframes blink{50%{opacity:0}}
-    .cmd{flex:1;background:transparent;border:0;color:#e7eae3;outline:0;font:inherit}
+    .cmd{flex:1;background:transparent;border:0;color:#e7eae3;outline:0;font:inherit;caret-color:#c8ff8c}
     .cmd::placeholder{color:#90a07e}
     /* Side panel */
     .panel{
@@ -127,7 +123,6 @@
       <div class="term-bar" style="gap:10px">
         <span class="prompt">echo@ops</span><span class="host">/alpha?</span><span>$</span>
         <input id="cmd" class="cmd" type="text" autofocus spellcheck="false" autocomplete="off" placeholder="type 'help' to begin…" />
-        <span class="caret" aria-hidden="true"></span>
       </div>
     </section>
 
