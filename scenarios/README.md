@@ -18,6 +18,8 @@ A scenario expressed in JSON should follow this structure:
       "name": "alpha node",
       "banner": "Connected to ALPHA node.",
       "grid": "31U DQ 48251 11932",
+      "ip": "10.2.3.112",
+      "visible": true,
       "files": {
         "path/to/file.txt": "File contents",
         "images/map.svg": {"image": "img/bg-topo-map.svg", "caption": "Area map"}
@@ -27,6 +29,7 @@ A scenario expressed in JSON should follow this structure:
       "name": "bravo node",
       "banner": "Connected to BRAVO node.",
       "grid": "31U DQ 48800 11800",
+      "visible": true,
       "files": {
         "path/to/file.txt": "File contents"
       }
@@ -34,6 +37,8 @@ A scenario expressed in JSON should follow this structure:
   }
 }
 ```
+
+`ip` lets players connect using a fictitious IPv4 address. If `visible` is not set to `true` the node's name and identifier remain hidden in the interface.
 
 ## Text format
 
@@ -48,12 +53,15 @@ codes.bravo=5678
 nodes.alpha.name=alpha node
 nodes.alpha.banner=Connected to ALPHA
 nodes.alpha.grid=31U DQ 48251 11932
+nodes.alpha.ip=10.2.3.112
 nodes.alpha.files.ops/encoded.msg=Q09ERTogMTIzNA==
 nodes.alpha.files.images/map.svg.image=img/bg-topo-map.svg
 nodes.bravo.name=bravo node
 nodes.bravo.banner=Connected to BRAVO
 nodes.bravo.grid=31U DQ 48800 11800
 nodes.bravo.files.intel/msg.enc=PBQR: 5678
+nodes.alpha.visible=true
+nodes.bravo.visible=true
 ```
 
 ## Running

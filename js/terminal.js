@@ -7,11 +7,8 @@
   var INTRUSION_LIMIT_MS = 90000;   // session lifespan before forced disconnect (90s)
   var INTRUSION_TICK_MS = 1000;     // countdown update interval
 
-  // Map field IPs to nodes (print these on your physical intel props)
-  var IP_TO_NODE = {
-    "10.2.3.112": "alpha",
-    "10.4.1.77":  "bravo"
-  };
+  // Map field IPs to nodes (populated per scenario)
+  var IP_TO_NODE = {};
 
   // —— Scenario data —— //
   var GAME = {
@@ -28,8 +25,7 @@
   var screen = document.getElementById('screen');
   var input  = document.getElementById('cmd');
   var hostEl = document.getElementById('host');
-  var alphaState = document.getElementById('alphaState');
-  var bravoState = document.getElementById('bravoState');
+  var statusEl = document.getElementById('status');
   var progressEl = document.getElementById('progress');
   var brief = document.getElementById('brief');
   var objectiveEl = document.getElementById('objective');
@@ -75,14 +71,25 @@
     screen.scrollTop = screen.scrollHeight;
   }
   function hr(){ write('────────────────────────────────────────────────', 'muted'); }
-  function setHost(){ hostEl.textContent = '/' + (GAME.currentHost || ''); }
+  function setHost(){
+    if(GAME.currentHost){
+      var node = GAME.nodes[GAME.currentHost];
+      hostEl.textContent = '/' + (node && node.visible ? GAME.currentHost : '?');
+    } else {
+      hostEl.textContent = '/';
+    }
+  }
   function updatePanel(){
-    var gridA = (GAME.nodes.alpha && GAME.nodes.alpha.grid) ? ' @ ' + GAME.nodes.alpha.grid : '';
-    var gridB = (GAME.nodes.bravo && GAME.nodes.bravo.grid) ? ' @ ' + GAME.nodes.bravo.grid : '';
-    alphaState.textContent = GAME.found.alpha ? ('Code ' + GAME.codes.alpha + ' found' + gridA) : (GAME.currentHost==='alpha'?'Connected'+gridA:'Unknown');
-    bravoState.textContent = GAME.found.bravo ? ('Code ' + GAME.codes.bravo + ' found' + gridB) : (GAME.currentHost==='bravo'?'Connected'+gridB:'Unknown');
-    var totalFound = Object.values(GAME.found).filter(Boolean).length;
-    var totalCodes = Object.keys(GAME.found).length;
+    var totalFound = 0;
+    Object.keys(GAME.nodes).forEach(function(k){
+      var node = GAME.nodes[k];
+      var grid = node.grid ? ' @ ' + node.grid : '';
+      var txt = 'Unknown';
+      if(GAME.found[k]){ txt = 'Code ' + GAME.codes[k] + ' found' + grid; totalFound++; }
+      else if(GAME.currentHost === k){ txt = 'Connected' + grid; }
+      if(node.stateEl) node.stateEl.textContent = txt;
+    });
+    var totalCodes = Object.keys(GAME.nodes).length;
     var timeLeft = timeRemaining();
     var t = totalFound + ' / ' + totalCodes + ' codes';
     if(GAME.connected && timeLeft > 0){
@@ -95,9 +102,10 @@
     if(allFound){
       hr();
       write(GAME.completeMessage || 'MISSION COMPLETE ✅', 'success');
-      Object.keys(GAME.codes).forEach(function(k){
+      Object.keys(GAME.codes).forEach(function(k, idx){
         var grid = (GAME.nodes[k] && GAME.nodes[k].grid) ? ' @ ' + GAME.nodes[k].grid : '';
-        write(k.toUpperCase() + ': ' + GAME.codes[k] + grid, 'success');
+        var label = (GAME.nodes[k] && GAME.nodes[k].displayName) ? GAME.nodes[k].displayName : k.toUpperCase();
+        write(label + ': ' + GAME.codes[k] + grid, 'success');
       });
       hr();
     }
@@ -108,7 +116,7 @@
     return files.hasOwnProperty(path) ? files[path] : null;
   }
   function listFiles(){
-    if(!GAME.connected){ write('Not connected. Use: connect <ip|alpha|bravo>', 'warn'); return; }
+    if(!GAME.connected){ write('Not connected. Use: connect <ip or name>', 'warn'); return; }
     var files = GAME.nodes[GAME.currentHost].files;
     var keys = Object.keys(files);
     if(!keys.length){ write('(no files)'); return; }
@@ -179,12 +187,37 @@
 
   function loadScenario(data){
     resetGameState();
+    IP_TO_NODE = {};
     GAME.codes = data.codes || {};
     GAME.nodes = data.nodes || {};
     GAME.completeMessage = data.completeMessage || null;
     GAME.found = {};
-    Object.keys(GAME.codes).forEach(function(k){ GAME.found[k] = false; });
     objectiveEl.textContent = data.objective || '';
+
+    // Remove existing node entries in status panel
+    Array.from(statusEl.querySelectorAll('.node-item')).forEach(function(el){ el.remove(); });
+    var progressDt = document.getElementById('progress').previousElementSibling;
+
+    var keys = Object.keys(GAME.nodes);
+    keys.forEach(function(k, idx){
+      GAME.found[k] = false;
+      var node = GAME.nodes[k];
+      if(node.ip) IP_TO_NODE[node.ip] = k;
+      node.visible = node.visible === true;
+      node.displayName = node.visible ? (node.name || k) : 'Node ' + (idx+1);
+
+      // build panel entry
+      var dt = document.createElement('dt');
+      dt.className = 'node-item';
+      dt.textContent = node.displayName;
+      var dd = document.createElement('dd');
+      dd.className = 'node-item';
+      dd.textContent = 'Unknown';
+      node.stateEl = dd;
+      statusEl.insertBefore(dt, progressDt);
+      statusEl.insertBefore(dd, progressDt);
+    });
+
     write('Loaded scenario: ' + (data.title || data.id), 'success');
     updatePanel();
   }
@@ -249,7 +282,7 @@
       write('Available commands:', 'muted');
       write('  help                    Show this help');
       write('  scan                    Passive sweep (may not reveal hidden hosts)');
-      write('  connect <ip|alpha|bravo>  Attempt link to target');
+      write('  connect <ip|name>  Attempt link to target');
       write('  disconnect              Terminate current session');
       write('  ls                      List files on current node');
       write('  cat <path>              Print a file');
@@ -271,7 +304,7 @@
       }, 300);
     },
     connect: function(arg){
-      if(!arg){ write('Usage: connect <ip|alpha|bravo>', 'warn'); return; }
+      if(!arg){ write('Usage: connect <ip or name>', 'warn'); return; }
       if(GAME.connected){ write('A session is already active. Use `disconnect` first.', 'warn'); return; }
 
       var node = null;
@@ -289,11 +322,16 @@
       }
 
       if(!node){
-        write('Unknown target. Use a valid field address or known host (alpha|bravo).', 'warn');
+        write('Unknown target. Use a valid field address or visible host name.', 'warn');
         return;
       }
 
-      write('Connecting to ' + (IP_TO_NODE[arg] ? arg + ' ('+node+')' : node) + ' …', 'muted');
+      var display = node;
+      if(IP_TO_NODE[arg]){
+        display = arg;
+        if(GAME.nodes[node] && GAME.nodes[node].visible){ display += ' (' + node + ')'; }
+      }
+      write('Connecting to ' + display + ' …', 'muted');
       setTimeout(function(){ stagedConnect(node); }, CONNECT_DELAY_MS);
     },
     disconnect: function(){ disconnectUser(); },
@@ -331,30 +369,29 @@
     },
     status: function(){
       updatePanel();
-      var a = (GAME.found.alpha?'complete':'pending');
-      var b = (GAME.found.bravo?'complete':'pending');
       var left = timeRemaining();
       if(GAME.connected){
         write('Status: connected / ' + (GAME.currentHost || '?') + ' · time left ' + fmtTime(left));
       } else {
         write('Status: idle (no active session).');
       }
-      write('Alpha: ' + a + ' | Bravo: ' + b);
+      Object.keys(GAME.nodes).forEach(function(k){
+        var label = GAME.nodes[k].displayName || k;
+        var st = GAME.found[k] ? 'complete' : 'pending';
+        write(label + ': ' + st);
+      });
     },
     submit: function(num){
       num = String(num || '');
       if(!/^\d{4}$/.test(num)){ write('Submit requires a 4‑digit number.', 'warn'); return; }
       var hit = false;
-      if(num===GAME.codes.alpha){
-        if(!GAME.found.alpha){ write('Alpha code accepted.', 'success'); }
-        GAME.found.alpha = true;
-        hit = true;
-      }
-      if(num===GAME.codes.bravo){
-        if(!GAME.found.bravo){ write('Bravo code accepted.', 'success'); }
-        GAME.found.bravo = true;
-        hit = true;
-      }
+      Object.keys(GAME.codes).forEach(function(k){
+        if(num===GAME.codes[k]){
+          if(!GAME.found[k]){ write((GAME.nodes[k].displayName || k) + ' code accepted.', 'success'); }
+          GAME.found[k] = true;
+          hit = true;
+        }
+      });
       if(!hit){ write('Code rejected.', 'err'); }
       updatePanel(); victoryCheck();
     },
