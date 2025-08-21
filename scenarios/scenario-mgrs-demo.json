@@ -9,6 +9,7 @@
       "name": "raven-alpha",
       "banner": "Connected to ALPHA relay.",
       "grid": "31U DQ 48251 11932",
+      "visible": true,
       "files": {
         "logs/echo.txt": "Echo Platoon staging at grid 31U DQ 48251 11932.",
         "ops/code.enc": "Q09ERTogNDUyMQ==",
@@ -21,6 +22,7 @@
       "name": "raven-bravo",
       "banner": "Connected to BRAVO storage.",
       "grid": "31U DQ 48800 11800",
+      "visible": true,
       "files": {
         "intel/raven.msg": "FRPERG ZRFFNTR: Enira havg vf tvivat fvtanyf. PBQR: 8110",
         "reports/status.txt": "Bravo outpost stable at grid 31U DQ 48800 11800.",
