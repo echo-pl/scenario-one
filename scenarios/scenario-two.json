@@ -21,5 +21,17 @@
         "intel/msg.enc": "FRPERG PVCURE: EBG13\nPBQR: 2718"
       }
     }
+  },
+  "hints": {
+    "global": [
+      "Files may be encoded; use decode commands to read them.",
+      "Each node hides a 4-digit launch code."
+    ],
+    "alpha": [
+      "The message in /ops/encoded.msg is Base64; decode it for the first code."
+    ],
+    "bravo": [
+      "The intel message is ROT13 encoded; decoding reveals the second code."
+    ]
   }
 }

@@ -20,5 +20,17 @@
         "intel/msg.enc": "PBQR: 3456"
       }
     }
+  },
+  "hints": {
+    "global": [
+      "Explore each node for encoded messages.",
+      "One code is Base64 encoded; the other is in plain sight."
+    ],
+    "alpha": [
+      "The /ops/encoded.msg file is Base64 and hides the first code."
+    ],
+    "bravo": [
+      "Check /intel/msg.enc for the second code."
+    ]
   }
 }
