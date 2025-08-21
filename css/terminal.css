@@ -128,3 +128,20 @@ code{background:#0d1209; border:1px solid var(--grid); border-radius:6px; paddin
 
 /* Footer */
 .foot{color:var(--muted); font-size:12px; margin:10px auto 24px}
+
+/* Image modal */
+.hidden{display:none}
+.img-modal{
+  position:fixed; top:0; left:0; width:100%; height:100%;
+  background:rgba(0,0,0,.6); z-index:50;
+}
+.img-modal-content{
+  position:absolute; top:60px; left:60px; background:var(--glass);
+  border:1px solid var(--grid); border-radius:var(--r-lg);
+  box-shadow:var(--shadow); padding:6px; cursor:move;
+}
+.img-modal-close{
+  position:absolute; top:2px; right:6px; background:transparent;
+  border:0; color:var(--ink); font-size:18px; cursor:pointer;
+}
+.img-modal-content img{max-width:80vw; max-height:80vh; display:block}

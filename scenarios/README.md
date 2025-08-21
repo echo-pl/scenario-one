@@ -11,18 +11,22 @@ A scenario expressed in JSON should follow this structure:
   "id": "sample-id",
   "title": "OP SAMPLE",
   "objective": "Find both codes.",
+  "completeMessage": "Good work, team.",
   "codes": {"alpha": "1234", "bravo": "5678"},
   "nodes": {
     "alpha": {
       "name": "alpha node",
       "banner": "Connected to ALPHA node.",
+      "grid": "31U DQ 48251 11932",
       "files": {
-        "path/to/file.txt": "File contents"
+        "path/to/file.txt": "File contents",
+        "images/map.svg": {"image": "img/bg-topo-map.svg", "caption": "Area map"}
       }
     },
     "bravo": {
       "name": "bravo node",
       "banner": "Connected to BRAVO node.",
+      "grid": "31U DQ 48800 11800",
       "files": {
         "path/to/file.txt": "File contents"
       }
@@ -43,9 +47,12 @@ codes.alpha=1234
 codes.bravo=5678
 nodes.alpha.name=alpha node
 nodes.alpha.banner=Connected to ALPHA
+nodes.alpha.grid=31U DQ 48251 11932
 nodes.alpha.files.ops/encoded.msg=Q09ERTogMTIzNA==
+nodes.alpha.files.images/map.svg.image=img/bg-topo-map.svg
 nodes.bravo.name=bravo node
 nodes.bravo.banner=Connected to BRAVO
+nodes.bravo.grid=31U DQ 48800 11800
 nodes.bravo.files.intel/msg.enc=PBQR: 5678
 ```
 
