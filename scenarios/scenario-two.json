@@ -1,0 +1,23 @@
+{
+  "id": "crimson-snow",
+  "title": "OP CRIMSON SNOW",
+  "objective": "Recover both 4-digit launch codes.",
+  "codes": { "alpha": "3141", "bravo": "2718" },
+  "nodes": {
+    "alpha": {
+      "name": "snow-relay (alpha)",
+      "banner": "Connected to ALPHA snow relay.",
+      "files": {
+        "ops/encoded.msg": "Q09ERTogMzE0MQ==",
+        "docs/tip.txt": "Decode Base64 in /ops to proceed."
+      }
+    },
+    "bravo": {
+      "name": "snow-cache (bravo)",
+      "banner": "Connected to BRAVO cache.",
+      "files": {
+        "intel/msg.enc": "FRPERG PVCURE: EBG13\nPBQR: 2718"
+      }
+    }
+  }
+}

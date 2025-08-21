@@ -1,0 +1,12 @@
+# Simple text scenario
+id=text-demo
+title=OP TEXT DEMO
+objective=Text files can define scenarios too.
+codes.alpha=1234
+codes.bravo=5678
+nodes.alpha.name=text-alpha
+nodes.alpha.banner=Connected to TEXT ALPHA.
+nodes.alpha.files.ops/encoded.msg=Q09ERTogMTIzNA==
+nodes.bravo.name=text-bravo
+nodes.bravo.banner=Connected to TEXT BRAVO.
+nodes.bravo.files.intel/msg.enc=PBQR: 5678

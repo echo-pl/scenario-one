@@ -103,6 +103,28 @@
     return (GAME.connected && GAME.sessionEndsAt) ? (GAME.sessionEndsAt - Date.now()) : 0;
   }
 
+  // Parse simple key=value scenario text files
+  function parseScenarioText(txt){
+    var obj = {};
+    txt.split(/\r?\n/).forEach(function(line){
+      line = line.trim();
+      if(!line || line.charAt(0)==='#') return;
+      var idx = line.indexOf('=');
+      if(idx === -1) return;
+      var key = line.slice(0, idx).trim();
+      var val = line.slice(idx + 1).trim();
+      var parts = key.split('.');
+      var ref = obj;
+      for(var i=0;i<parts.length-1;i++){
+        var p = parts[i];
+        if(!ref[p]) ref[p] = {};
+        ref = ref[p];
+      }
+      ref[parts[parts.length-1]] = val;
+    });
+    return obj;
+  }
+
   function resetGameState(msg){
     stopTimer();
     Object.keys(GAME.found).forEach(function(k){ GAME.found[k] = false; });
@@ -193,9 +215,10 @@
       write('  status                  Show progress and session time');
       write('  submit 1234             Submit a discovered code');
       write('  clear                   Clear the screen');
-      write('  reset                   Reset the exercise');
-      write('  run <file>              Load a scenario JSON');
-    },
+        write('  reset                   Reset the exercise');
+        write('  run <file>              Load a scenario file');
+        write('  load <file>             Alias for run');
+      },
     clear: function(){ screen.innerHTML = ''; },
     scan: function(){
       write('Running passive scan…', 'muted');
@@ -290,13 +313,20 @@
     reset: function(){
       resetGameState('Exercise state reset.');
     },
-    run: function(file){
-      if(!file){ write('Usage: run <scenario.json>', 'warn'); return; }
-      fetch('scenarios/' + file)
-        .then(function(res){ if(!res.ok) throw new Error(); return res.json(); })
-        .then(function(data){ loadScenario(data); })
-        .catch(function(){ write('Scenario load failed.', 'err'); });
-    }
+      run: function(file){
+        if(!file){ write('Usage: run <scenario file>', 'warn'); return; }
+        fetch('scenarios/' + file)
+          .then(function(res){
+            if(!res.ok) throw new Error();
+            return file.toLowerCase().endsWith('.json') ? res.json() : res.text();
+          })
+          .then(function(data){
+            if(typeof data === 'string'){ data = parseScenarioText(data); }
+            loadScenario(data);
+          })
+          .catch(function(){ write('Scenario load failed.', 'err'); });
+      },
+      load: function(file){ handlers.run(file); }
   };
 
   // —— Input routing —— //
@@ -328,6 +358,6 @@
 
   // —— Boot banner —— //
   write('ECHO-INTELNET v1.2 · Training build', 'muted');
-  write('No scenario loaded. Staff: run <file> (e.g., run scenario-one.json)', 'muted');
+  write('No scenario loaded. Use run <file> to load a scenario from /scenarios', 'muted');
   hr(); setHost(); updatePanel();
 })();

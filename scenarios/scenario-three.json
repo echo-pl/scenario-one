@@ -1,0 +1,22 @@
+{
+  "id": "silent-forest",
+  "title": "OP SILENT FOREST",
+  "objective": "Locate both recovery codes hidden in the forest nodes.",
+  "codes": { "alpha": "9012", "bravo": "3456" },
+  "nodes": {
+    "alpha": {
+      "name": "forest-relay (alpha)",
+      "banner": "Connected to ALPHA forest relay.",
+      "files": {
+        "ops/encoded.msg": "Q09ERTogOTAxMg=="
+      }
+    },
+    "bravo": {
+      "name": "forest-cache (bravo)",
+      "banner": "Connected to BRAVO forest cache.",
+      "files": {
+        "intel/msg.enc": "PBQR: 3456"
+      }
+    }
+  }
+}
