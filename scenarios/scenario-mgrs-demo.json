@@ -1,0 +1,37 @@
+{
+  "id": "grid-demo",
+  "title": "OP GRIDLOCK DEMO",
+  "objective": "Recover both codes and note the grids.",
+  "completeMessage": "Mission accomplished. Echo Platoon stands down.",
+  "codes": { "alpha": "4521", "bravo": "8110" },
+  "nodes": {
+    "alpha": {
+      "name": "raven-alpha",
+      "banner": "Connected to ALPHA relay.",
+      "grid": "31U DQ 48251 11932",
+      "files": {
+        "logs/echo.txt": "Echo Platoon staging at grid 31U DQ 48251 11932.",
+        "ops/code.enc": "Q09ERTogNDUyMQ==",
+        "intel/raven.enc": "FRPERG ABGR: Enira havg jvyy zbir gb gur abegu qrrc.",
+        "images/sector.map": {"image":"img/bg-topo-map.svg","caption":"Sector map - Raven unit zone."},
+        "docs/notice.txt": "All units maintain cover."
+      }
+    },
+    "bravo": {
+      "name": "raven-bravo",
+      "banner": "Connected to BRAVO storage.",
+      "grid": "31U DQ 48800 11800",
+      "files": {
+        "intel/raven.msg": "FRPERG ZRFFNTR: Enira havg vf tvivat fvtanyf. PBQR: 8110",
+        "reports/status.txt": "Bravo outpost stable at grid 31U DQ 48800 11800.",
+        "archives/echo.enc": "RWNobyBQbGF0b29uIG1vdHRvOiBIb25vdXIgdGhyb3VnaCB3aXNkb20u",
+        "docs/brief.txt": "Echo Platoon expected to retrieve intel."
+      }
+    }
+  },
+  "hints": {
+    "global": ["Use decode base64 and decode rot13 to read encrypted files."],
+    "alpha": ["The ops file hides the first code."],
+    "bravo": ["Raven unit message conceals the second code."]
+  }
+}

@@ -20,7 +20,8 @@
     currentHost: null,
     connected: false,
     sessionEndsAt: null,
-    nodes: {}
+    nodes: {},
+    completeMessage: null
   };
 
   // —— DOM —— //
@@ -32,6 +33,38 @@
   var progressEl = document.getElementById('progress');
   var brief = document.getElementById('brief');
   var objectiveEl = document.getElementById('objective');
+  var imgModal = document.getElementById('imgModal');
+  var imgModalImg = document.getElementById('imgModalImg');
+  var imgModalContent = document.getElementById('imgModalContent');
+  var imgModalClose = document.getElementById('imgModalClose');
+
+  imgModalClose.addEventListener('click', function(){
+    imgModal.classList.add('hidden');
+    imgModalImg.src = '';
+  });
+  function showImageModal(src){
+    imgModalImg.src = src;
+    imgModal.classList.remove('hidden');
+  }
+  (function(el){
+    var sx, sy, ox, oy;
+    el.addEventListener('mousedown', function(e){
+      sx = e.clientX; sy = e.clientY;
+      var r = el.getBoundingClientRect();
+      ox = r.left; oy = r.top;
+      function mv(ev){
+        el.style.left = (ox + ev.clientX - sx) + 'px';
+        el.style.top  = (oy + ev.clientY - sy) + 'px';
+      }
+      function up(){
+        document.removeEventListener('mousemove', mv);
+        document.removeEventListener('mouseup', up);
+      }
+      document.addEventListener('mousemove', mv);
+      document.addEventListener('mouseup', up);
+      e.preventDefault();
+    });
+  })(imgModalContent);
 
   // —— Helpers —— //
   function write(txt, cls){
@@ -44,21 +77,28 @@
   function hr(){ write('────────────────────────────────────────────────', 'muted'); }
   function setHost(){ hostEl.textContent = '/' + (GAME.currentHost || ''); }
   function updatePanel(){
-    alphaState.textContent = GAME.found.alpha ? ('Code ' + GAME.codes.alpha + ' found') : (GAME.currentHost==='alpha'?'Connected':'Unknown');
-    bravoState.textContent = GAME.found.bravo ? ('Code ' + GAME.codes.bravo + ' found') : (GAME.currentHost==='bravo'?'Connected':'Unknown');
-    var total = (GAME.found.alpha?1:0) + (GAME.found.bravo?1:0);
+    var gridA = (GAME.nodes.alpha && GAME.nodes.alpha.grid) ? ' @ ' + GAME.nodes.alpha.grid : '';
+    var gridB = (GAME.nodes.bravo && GAME.nodes.bravo.grid) ? ' @ ' + GAME.nodes.bravo.grid : '';
+    alphaState.textContent = GAME.found.alpha ? ('Code ' + GAME.codes.alpha + ' found' + gridA) : (GAME.currentHost==='alpha'?'Connected'+gridA:'Unknown');
+    bravoState.textContent = GAME.found.bravo ? ('Code ' + GAME.codes.bravo + ' found' + gridB) : (GAME.currentHost==='bravo'?'Connected'+gridB:'Unknown');
+    var totalFound = Object.values(GAME.found).filter(Boolean).length;
+    var totalCodes = Object.keys(GAME.found).length;
     var timeLeft = timeRemaining();
-    var t = total + ' / 2 codes';
+    var t = totalFound + ' / ' + totalCodes + ' codes';
     if(GAME.connected && timeLeft > 0){
       t += ' · session ' + fmtTime(timeLeft) + ' remaining';
     }
     progressEl.textContent = t;
   }
   function victoryCheck(){
-    if(GAME.found.alpha && GAME.found.bravo){
+    var allFound = Object.keys(GAME.found).every(function(k){ return GAME.found[k]; });
+    if(allFound){
       hr();
-      write('MISSION COMPLETE ✅', 'success');
-      write('Take these to the lock box:  ' + GAME.codes.alpha + '  +  ' + GAME.codes.bravo, 'success');
+      write(GAME.completeMessage || 'MISSION COMPLETE ✅', 'success');
+      Object.keys(GAME.codes).forEach(function(k){
+        var grid = (GAME.nodes[k] && GAME.nodes[k].grid) ? ' @ ' + GAME.nodes[k].grid : '';
+        write(k.toUpperCase() + ': ' + GAME.codes[k] + grid, 'success');
+      });
       hr();
     }
   }
@@ -132,6 +172,8 @@
     GAME.connected = false;
     GAME.sessionEndsAt = null;
     setHost(); updatePanel();
+    imgModal.classList.add('hidden');
+    imgModalImg.src = '';
     if(msg) write(msg, 'warn');
   }
 
@@ -139,6 +181,7 @@
     resetGameState();
     GAME.codes = data.codes || {};
     GAME.nodes = data.nodes || {};
+    GAME.completeMessage = data.completeMessage || null;
     GAME.found = {};
     Object.keys(GAME.codes).forEach(function(k){ GAME.found[k] = false; });
     objectiveEl.textContent = data.objective || '';
@@ -260,9 +303,14 @@
       if(!path){ write('Usage: cat <path>', 'warn'); return; }
       var val = fileLookup(path);
       if(val == null){ write('No such file here.', 'err'); return; }
-      write('----- ' + path + ' -----', 'muted');
-      write(val);
-      write('----- end -----', 'muted');
+      if(typeof val === 'object' && val.image){
+        showImageModal(val.image);
+        if(val.caption) write(val.caption, 'muted');
+      } else {
+        write('----- ' + path + ' -----', 'muted');
+        write(val);
+        write('----- end -----', 'muted');
+      }
     },
     decode: function(kind){
       var rest = Array.prototype.slice.call(arguments,1).join(' ');
