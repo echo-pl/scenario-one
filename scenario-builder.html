@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en-au">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Scenario Builder – Echo Platoon</title>
+  <link rel="stylesheet" href="css/terminal.css" />
+  <style>
+    .form-grid{display:grid;gap:12px;margin-bottom:14px}
+    label{display:block;margin-bottom:4px}
+    input[type=text],textarea{width:100%;padding:6px;border:1px solid var(--grid);border-radius:6px;background:#0d1209;color:var(--ink)}
+    textarea{min-height:60px}
+    fieldset{border:1px solid var(--grid);border-radius:8px;margin:10px 0;padding:10px}
+    legend{padding:0 6px;font-size:14px}
+    .flex{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+    .btn-small{padding:4px 6px;font-size:12px}
+    pre{background:#0d1209;border:1px solid var(--grid);border-radius:8px;padding:10px;overflow:auto}
+  </style>
+</head>
+<body>
+<header class="site-head">
+  <div class="wrap">
+    <div class="brand">
+      <span class="badge">⚔️</span>
+      <div class="brand-text">
+        <div class="kicker">Echo Platoon</div>
+        <h1 class="title">Scenario Builder</h1>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+<section class="panel">
+  <h2 class="panel-head">Scenario Builder</h2>
+  <div class="panel-body">
+    <p class="muted">Fill out the fields below. Add nodes, codes, and hints as required. When finished, click <em>Download JSON</em> to save the scenario file.</p>
+    <form id="builder">
+       <div class="form-grid">
+         <div>
+           <label for="id">Scenario ID</label>
+           <input id="id" type="text" required />
+         </div>
+         <div>
+           <label for="title">Title</label>
+           <input id="title" type="text" required />
+         </div>
+         <div>
+           <label for="objective">Objective</label>
+           <input id="objective" type="text" required />
+         </div>
+       </div>
+
+       <fieldset id="codesField">
+         <legend>Codes</legend>
+         <div id="codes"></div>
+         <button type="button" class="btn btn-small" id="addCode">Add code</button>
+       </fieldset>
+
+       <fieldset id="nodesField">
+         <legend>Nodes</legend>
+         <div id="nodes"></div>
+         <button type="button" class="btn btn-small" id="addNode">Add node</button>
+       </fieldset>
+
+       <fieldset>
+         <legend>Global Hints</legend>
+         <div id="globalHints"></div>
+         <button type="button" class="btn btn-small" id="addGlobalHint">Add hint</button>
+       </fieldset>
+
+       <div class="actions">
+         <button type="button" class="btn" id="download">Download JSON</button>
+       </div>
+    </form>
+
+    <pre id="output" class="hidden"></pre>
+
+  </div>
+</section>
+</main>
+
+<script>
+  const codesDiv = document.getElementById('codes');
+  const nodesDiv = document.getElementById('nodes');
+  const globalHintsDiv = document.getElementById('globalHints');
+  const outputPre = document.getElementById('output');
+
+  const addCode = (key='', value='')=>{
+    const wrap = document.createElement('div');
+    wrap.className = 'flex';
+    wrap.innerHTML = `
+      <input type="text" placeholder="Key (e.g. alpha)" value="${key}" />
+      <input type="text" placeholder="4-digit code" value="${value}" />
+      <button type="button" class="btn btn-small">×</button>
+    `;
+    wrap.querySelector('button').addEventListener('click', ()=> wrap.remove());
+    codesDiv.appendChild(wrap);
+  };
+  const addFile = (container)=>{
+    const wrap = document.createElement('div');
+    wrap.className = 'flex';
+    wrap.innerHTML = `
+      <input type="text" placeholder="path/to/file.txt" />
+      <textarea placeholder="file contents"></textarea>
+      <button type="button" class="btn btn-small">×</button>
+    `;
+    wrap.querySelector('button').addEventListener('click', ()=> wrap.remove());
+    container.appendChild(wrap);
+  };
+  const addHint = (container, value='')=>{
+    const wrap = document.createElement('div');
+    wrap.className = 'flex';
+    wrap.innerHTML = `
+      <input type="text" value="${value}" />
+      <button type="button" class="btn btn-small">×</button>
+    `;
+    wrap.querySelector('button').addEventListener('click', ()=> wrap.remove());
+    container.appendChild(wrap);
+  };
+  const addNode = ()=>{
+    const wrap = document.createElement('fieldset');
+    wrap.innerHTML = `
+      <legend>Node</legend>
+      <div class="form-grid">
+        <div><label>Key</label><input type="text" class="node-key" placeholder="alpha" /></div>
+        <div><label>Name</label><input type="text" class="node-name" /></div>
+        <div><label>Banner</label><input type="text" class="node-banner" /></div>
+        <div><label>IP</label><input type="text" class="node-ip" /></div>
+        <div><label><input type="checkbox" class="node-visible" checked /> Visible</label></div>
+      </div>
+      <fieldset class="files"><legend>Files</legend><div class="file-list"></div>
+         <button type="button" class="btn btn-small add-file">Add file</button>
+      </fieldset>
+      <fieldset class="hints"><legend>Hints</legend><div class="hint-list"></div>
+         <button type="button" class="btn btn-small add-hint">Add hint</button>
+      </fieldset>
+      <button type="button" class="btn btn-small remove-node">Remove node</button>
+    `;
+    wrap.querySelector('.add-file').addEventListener('click', ()=> addFile(wrap.querySelector('.file-list')));
+    wrap.querySelector('.add-hint').addEventListener('click', ()=> addHint(wrap.querySelector('.hint-list')));
+    wrap.querySelector('.remove-node').addEventListener('click', ()=> wrap.remove());
+    nodesDiv.appendChild(wrap);
+  };
+
+  document.getElementById('addCode').addEventListener('click', ()=> addCode());
+  document.getElementById('addNode').addEventListener('click', ()=> addNode());
+  document.getElementById('addGlobalHint').addEventListener('click', ()=> addHint(globalHintsDiv));
+
+  addCode(); // initial fields
+  addNode();
+  addHint(globalHintsDiv);
+
+  document.getElementById('download').addEventListener('click', ()=>{
+    const scenario = {
+      id: document.getElementById('id').value,
+      title: document.getElementById('title').value,
+      objective: document.getElementById('objective').value,
+      codes: {},
+      nodes: {},
+      hints: { global: [] }
+    };
+    // codes
+    codesDiv.querySelectorAll('div.flex').forEach(div=>{
+      const inputs = div.querySelectorAll('input');
+      const key = inputs[0].value.trim();
+      const val = inputs[1].value.trim();
+      if(key && val){ scenario.codes[key] = val; }
+    });
+    // nodes
+    nodesDiv.querySelectorAll('fieldset').forEach(fs=>{
+      const key = fs.querySelector('.node-key').value.trim();
+      if(!key) return;
+      const node = {
+        name: fs.querySelector('.node-name').value,
+        banner: fs.querySelector('.node-banner').value,
+        ip: fs.querySelector('.node-ip').value,
+        visible: fs.querySelector('.node-visible').checked,
+        files: {}
+      };
+      fs.querySelectorAll('.file-list > div.flex').forEach(f=>{
+        const inputs = f.querySelectorAll('input,textarea');
+        const path = inputs[0].value.trim();
+        const content = inputs[1].value;
+        if(path){ node.files[path] = content; }
+      });
+      const hints = [];
+      fs.querySelectorAll('.hint-list > div.flex input').forEach(h=>{
+        const val = h.value.trim();
+        if(val) hints.push(val);
+      });
+      if(hints.length) scenario.hints[key] = hints;
+      scenario.nodes[key] = node;
+    });
+    // global hints
+    globalHintsDiv.querySelectorAll('div.flex input').forEach(h=>{
+      const val = h.value.trim();
+      if(val) scenario.hints.global.push(val);
+    });
+    const json = JSON.stringify(scenario, null, 2);
+    outputPre.textContent = json;
+    outputPre.classList.remove('hidden');
+
+    const blob = new Blob([json], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (scenario.id||'scenario') + '.json';
+    a.click();
+  });
+</script>
+</body>
+</html>
+
