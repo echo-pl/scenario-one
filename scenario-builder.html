@@ -34,7 +34,7 @@
 <section class="panel">
   <h2 class="panel-head">Scenario Builder</h2>
   <div class="panel-body">
-    <p class="muted">Fill out the fields below. Add nodes, codes, and hints as required. The scenario JSON updates live below for copy and paste.</p>
+    <p class="muted">Fill out the fields below. Add nodes, codes, and hints as required. The scenario JSON updates live below for copy and paste, or click <strong>Update JSON</strong> to refresh it manually.</p>
     <form id="builder">
        <div class="form-grid">
          <div>
@@ -70,6 +70,10 @@
        </fieldset>
 
     </form>
+
+    <div class="actions">
+      <button type="button" class="btn" id="updateJson">Update JSON</button>
+    </div>
 
     <pre id="output"></pre>
 
@@ -194,6 +198,7 @@
   document.getElementById('addCode').addEventListener('click', ()=> addCode());
   document.getElementById('addNode').addEventListener('click', ()=> addNode());
   document.getElementById('addGlobalHint').addEventListener('click', ()=> addHint(globalHintsDiv));
+  document.getElementById('updateJson').addEventListener('click', updateOutput);
 
   builderForm.addEventListener('input', updateOutput);
   builderForm.addEventListener('change', updateOutput);
