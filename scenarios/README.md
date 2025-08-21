@@ -1,0 +1,61 @@
+# Scenario Files
+
+Scenario files define missions for the training terminal. Place each file in this directory and load it from the terminal using the `run` or `load` commands.
+
+## JSON format
+
+A scenario expressed in JSON should follow this structure:
+
+```json
+{
+  "id": "sample-id",
+  "title": "OP SAMPLE",
+  "objective": "Find both codes.",
+  "codes": {"alpha": "1234", "bravo": "5678"},
+  "nodes": {
+    "alpha": {
+      "name": "alpha node",
+      "banner": "Connected to ALPHA node.",
+      "files": {
+        "path/to/file.txt": "File contents"
+      }
+    },
+    "bravo": {
+      "name": "bravo node",
+      "banner": "Connected to BRAVO node.",
+      "files": {
+        "path/to/file.txt": "File contents"
+      }
+    }
+  }
+}
+```
+
+## Text format
+
+Scenarios can also be written as simple `key=value` text files using dot notation for nested keys:
+
+```
+id=sample-text
+title=OP TEXT SAMPLE
+objective=Demonstrate text scenarios
+codes.alpha=1234
+codes.bravo=5678
+nodes.alpha.name=alpha node
+nodes.alpha.banner=Connected to ALPHA
+nodes.alpha.files.ops/encoded.msg=Q09ERTogMTIzNA==
+nodes.bravo.name=bravo node
+nodes.bravo.banner=Connected to BRAVO
+nodes.bravo.files.intel/msg.enc=PBQR: 5678
+```
+
+## Running
+
+From the terminal:
+
+```
+run scenario-two.json
+load scenario-four.txt
+```
+
+The terminal loads files from this directory, so only the file name is required.
