@@ -12,9 +12,9 @@
       "visible": true,
       "files": {
         "logs/echo.txt": "Echo Platoon staging at grid 31U DQ 48251 11932.",
-        "ops/code.enc": "Q09ERTogNDUyMQ==",
+        "logs/code.enc": "Q09ERTogNDUyMQ==",
         "intel/raven.enc": "FRPERG ABGR: Enira havg jvyy zbir gb gur abegu qrrc.",
-        "images/sector.map": {"image":"img/bg-topo-map.svg","caption":"Sector map - Raven unit zone."},
+        "intel/sector.map": {"image":"img/bg-topo-map.svg","caption":"Sector map - Raven unit zone."},
         "docs/notice.txt": "All units maintain cover."
       }
     },
